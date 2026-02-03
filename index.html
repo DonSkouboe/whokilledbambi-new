@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhoKilledBambi</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Cormorant Garamond (Display Serif) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <!-- Lato (Body Sans) -->
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ['"Cormorant Garamond"', 'serif'],
+              sans: ['"Lato"', 'sans-serif'],
+            },
+            colors: {
+              wkbPaper: '#F2EFE9',   // Bone White / Sheet Music
+              wkbInk: '#1A1C1B',     // Soft Black
+              wkbCoral: '#FF6B4A',   // Accent
+              wkbSage: '#94A388',    // Muted Green
+            },
+            animation: {
+              'spin-slow': 'spin 20s linear infinite',
+              'draw-path': 'drawPath 2.5s ease-out forwards',
+              'marquee': 'marquee 60s linear infinite',
+              'breathe': 'breathe 8s ease-in-out infinite',
+              'pulse-color': 'pulseColor 10s ease-in-out infinite',
+              'pulse-slow': 'pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              drawPath: {
+                '0%': { strokeDasharray: '3000', strokeDashoffset: '3000' },
+                '100%': { strokeDasharray: '3000', strokeDashoffset: '0' },
+              },
+              marquee: {
+                '0%': { transform: 'translateX(0%)' },
+                '100%': { transform: 'translateX(-50%)' },
+              },
+              breathe: {
+                '0%, 100%': { transform: 'scale(1)', opacity: '0.8' },
+                '50%': { transform: 'scale(1.1)', opacity: '1' },
+              },
+              pulseColor: {
+                '0%, 100%': { backgroundColor: '#FF6B4A' }, // Coral
+                '33%': { backgroundColor: '#94A388' },      // Sage
+                '66%': { backgroundColor: '#C48B55' },      // Gold/Wood
+              }
+            }
+          }
+        }
+      }
+    </script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #F2EFE9;
+        color: #1A1C1B;
+        font-family: 'Lato', sans-serif;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      /* NOISE TEXTURE */
+      .noise {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 50;
+        opacity: 0.05;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        mix-blend-mode: multiply;
+      }
+
+      /* HIGH END TYPOGRAPHY UTILS */
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 400;
+      }
+      
+      .blend-ink {
+        mix-blend-mode: multiply;
+      }
+
+      .text-editorial {
+        letter-spacing: -0.03em; /* Tight tracking for headers */
+      }
+      
+      .fade-in-up {
+        animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+      }
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* SMOOTH SCROLL & SELECTION */
+      html { scroll-behavior: smooth; }
+      ::selection { background: #FF6B4A; color: white; }
+
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #F2EFE9; }
+      ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #1A1C1B; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+      
+      // --- SANITY CLIENT CONFIG ---
+      const PROJECT_ID = 'cv7t8a8f';
+      const DATASET = 'production';
+      
+      // Helper function to fetch data from Sanity
+      const fetchSanity = async (query) => {
+        const encodedQuery = encodeURIComponent(query);
+        const url = `https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${encodedQuery}`;
+        try {
+          const response = await fetch(url);
+          const json = await response.json();
+          return json.result || [];
+        } catch (error) {
+          console.error("Sanity Fetch Error:", error);
+          throw error;
+        }
+      };
+
+      // --- ICONS ---
+      const ArrowRight = ({ size = 24, className = "" }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      );
+      const Music = ({ size = 24, className = "" }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      );
+      const XIcon = ({ size = 24, className = "" }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      );
+      const Speaker = ({ size = 24, className = "" }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+      );
+      const SpeakerOff = ({ size = 24, className = "" }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v6a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+      );
+      const Loader = ({ size = 24, className = "" }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={`animate-spin ${className}`}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      );
+
+      // --- DATA ---
+      const MEMBERS_DATA = [
+        { name: "Anna Sakham Jalving", instrument: "Violin", imageUrl: "https://static.wixstatic.com/media/d3f0ae_0052268835dc494f988a12393faf0619~mv2.jpg/v1/crop/x_733,y_169,w_2037,h_2291/fill/w_500,h_600,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Presse2022_MatiasBager4103.jpg" },
+        { name: "Benedikte Borum Engell", instrument: "Cello", imageUrl: "https://static.wixstatic.com/media/d3f0ae_c7f9ce2cc6754dcb82e6a55eaf998899~mv2.jpg/v1/crop/x_605,y_0,w_2290,h_2625/fill/w_500,h_600,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Presse2022_MatiasBager4084.jpg" },
+        { name: "Mette Dahl Kristensen", instrument: "Bratsch", imageUrl: "https://static.wixstatic.com/media/d3f0ae_a7738640eb22483e8b874292671309ff~mv2.jpg/v1/crop/x_712,y_245,w_2077,h_2380/fill/w_500,h_600,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Presse2022_MatiasBager4119%20(1).jpg" },
+        { name: "Sophia Larsdotter", instrument: "Violin", imageUrl: "https://static.wixstatic.com/media/d3f0ae_f49692885def456daef608186fb0c4c1~mv2.jpg/v1/crop/x_770,y_245,w_2077,h_2380/fill/w_500,h_600,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Presse2022_MatiasBager4148.jpg" },
+        { name: "Mathilde Helding", instrument: "Cello", imageUrl: "https://static.wixstatic.com/media/d3f0ae_93bf55c47ab745b0be729116dc1cfdde~mv2.jpg/v1/crop/x_53,y_0,w_429,h_495/fill/w_500,h_600,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Billede%2012-06-2014%2000_10_edited.jpg" },
+        { name: "Silke Kirstine Ekmann Kidholm", instrument: "Violin", imageUrl: "https://static.wixstatic.com/media/d3f0ae_a02aca9ac4a740b3b4436e939937fd78~mv2.jpg/v1/crop/x_766,y_339,w_1947,h_2381/fill/w_500,h_600,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Presse2022_MatiasBager4162%20(1).jpg" }
+      ];
+      
+      const COLLABORATORS = ["Signe Svendsen", "Brimheim", "Mads Langer", "Steffen Brandt", "Claus Hempler", "eee gee", "Peter Sommer", "Simon Kvamm", "Emma Sehested Høeg", "Father John Misty", "Jacob Bellens", "Nicklas Sahl", "Lucky Lo", "Fallulah", "Oh Land", "Jenny Wilson", "Puk Qvortrup", "Kira Skov", "Ginne Marker", "Asbjørn", "Teitur", "Ida Wenøe", "Teatret Møllen", "ROYA", "Hjalte Ross", "Søren Huss", "Mathilde Falch", "Mumle", "De Eneste To", "Hvalfugl", "Reveal Party", "Rikke Thomsen", "Hugo Helmig", "Sebastian Wolff", "Benjamin Hav", "Pernille Rosendahl", "Karen Troldborg", "Thomas Helmig", "Guldimund", "Jonas H. Petersen", "ELBA", "Rod Stewart", "Baloosh", "Lydmor", "Mattias Kolstrup", "Katinka", "Caroline Henderson", "Lowly", "Thomas Buttenschøn"];
+
+      // --- COMPONENTS ---
+
+      const Spotlight = () => {
+        const [position, setPosition] = useState({ x: 0, y: 0 });
+        useEffect(() => {
+          const handleMouseMove = (e) => {
+            requestAnimationFrame(() => setPosition({ x: e.clientX, y: e.clientY }));
+          };
+          window.addEventListener('mousemove', handleMouseMove);
+          return () => window.removeEventListener('mousemove', handleMouseMove);
+        }, []);
+        return (
+          <div className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-700"
+            style={{
+              background: `radial-gradient(800px circle at ${position.x}px ${position.y}px, rgba(255, 255, 255, 0.4), transparent 50%)` 
+            }}
+          />
+        );
+      };
+
+      const AudioPlayer = () => {
+        const [isOpen, setIsOpen] = useState(false);
+        return (
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+            <div className={`transition-all duration-500 ease-out overflow-hidden rounded-sm shadow-2xl ${isOpen ? 'max-h-[400px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 translate-y-8'}`}>
+              <iframe style={{borderRadius: '2px'}} src="https://open.spotify.com/embed/artist/1Bcrf69IwrdZdJAtu0VjqK?utm_source=generator&theme=0" width="300" height="80" frameBorder="0" allowFullScreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" className="bg-wkbPaper"></iframe>
+            </div>
+            <div className="flex items-center gap-4">
+              <div onClick={() => setIsOpen(!isOpen)} className={`cursor-pointer text-[10px] font-sans font-bold text-wkbInk tracking-[0.2em] uppercase transition-opacity duration-500 ${isOpen ? 'opacity-0' : 'opacity-60 hidden sm:block hover:opacity-100'}`}>Lyt</div>
+              <button onClick={() => setIsOpen(!isOpen)} className={`w-12 h-12 rounded-full border border-wkbInk/10 flex items-center justify-center transition-all duration-300 backdrop-blur-md bg-wkbPaper/50 hover:bg-white shadow-lg ${isOpen ? 'border-wkbCoral text-wkbCoral' : 'text-wkbInk hover:text-wkbCoral'}`}>
+                {isOpen ? <XIcon size={18} /> : <Music size={20} />}
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      // INTRO SEQUENCE - TRADEMARK CIRCLE
+      const IntroSequence = ({ onComplete }) => {
+        const [stage, setStage] = useState(0);
+
+        useEffect(() => {
+          // Timing adjusted for circle breathing and text arrival
+          const s1 = setTimeout(() => setStage(1), 500);   // Circle Appears/Grows
+          const s2 = setTimeout(() => setStage(2), 2000);  // Color Shift 1
+          const s3 = setTimeout(() => setStage(3), 3500);  // Color Shift 2 + Expansion
+          const s4 = setTimeout(() => setStage(4), 5000);  // Text Slides In
+          const s5 = setTimeout(() => setStage(5), 8000);  // Fade Out
+          const s6 = setTimeout(() => onComplete(), 9000); 
+          return () => [s1, s2, s3, s4, s5, s6].forEach(clearTimeout);
+        }, [onComplete]);
+
+        const getPosition = (word) => {
+          if (stage < 4) {
+            if (word === 'WHO') return 'opacity-0 -translate-x-[150px] blur-md';
+            if (word === 'KILLED') return 'opacity-0 translate-x-[150px] blur-md';
+            if (word === 'BAMBI') return 'opacity-0 translate-y-[150px] blur-md';
+          }
+          if (stage >= 4) {
+            if (word === 'WHO') return 'opacity-100 -translate-x-[5.5rem] sm:-translate-x-[12rem] -translate-y-[2.5rem] sm:-translate-y-[4rem] blur-0';
+            if (word === 'KILLED') return 'opacity-100 translate-x-[6.5rem] sm:translate-x-[14rem] -translate-y-[2.5rem] sm:-translate-y-[4rem] blur-0';
+            if (word === 'BAMBI') return 'opacity-100 translate-y-[2.5rem] sm:translate-y-[4rem] blur-0';
+          }
+        };
+
+        return (
+          <div className={`fixed inset-0 z-50 bg-wkbPaper flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${stage === 5 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <div className="relative w-full max-w-6xl h-[80vh] flex items-center justify-center">
+              
+              {/* THE TRADEMARK CIRCLE - REPLACING VIOLIN */}
+              <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full mix-blend-multiply transition-all duration-[2000ms] ease-in-out
+                 ${stage === 0 ? 'w-0 h-0 opacity-0 bg-wkbInk blur-0' : ''}
+                 ${stage === 1 ? 'w-32 h-32 opacity-100 bg-wkbInk blur-0' : ''}
+                 ${stage === 2 ? 'w-64 h-64 opacity-90 bg-wkbCoral scale-110 blur-sm' : ''}
+                 ${stage === 3 ? 'w-80 h-80 opacity-80 bg-wkbSage scale-125 blur-md' : ''}
+                 ${stage >= 4 ? 'w-96 h-96 opacity-40 bg-wkbCoral animate-pulse-slow blur-3xl' : ''}
+              `}></div>
+
+              {/* Secondary subtle orb for depth */}
+               <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full mix-blend-multiply filter blur-3xl transition-all duration-[2500ms] ease-in-out delay-300
+                 ${stage < 3 ? 'w-0 h-0 opacity-0' : 'w-[500px] h-[500px] opacity-20 bg-wkbSage'}
+              `}></div>
+
+              {/* TYPOGRAPHY */}
+              <h1 className={`absolute text-6xl sm:text-8xl md:text-9xl font-serif font-bold tracking-tighter text-wkbSage mix-blend-multiply transition-all duration-[1500ms] cubic-bezier(0.22, 1, 0.36, 1) ${getPosition('WHO')}`}>WHO</h1>
+              <h1 className={`absolute text-6xl sm:text-8xl md:text-9xl font-serif font-bold tracking-tighter text-wkbCoral mix-blend-multiply transition-all duration-[1500ms] cubic-bezier(0.22, 1, 0.36, 1) delay-100 ${getPosition('KILLED')}`}>KILLED</h1>
+              <h1 className={`absolute text-6xl sm:text-8xl md:text-9xl font-serif font-bold tracking-tighter text-wkbInk mix-blend-multiply transition-all duration-[1500ms] cubic-bezier(0.22, 1, 0.36, 1) delay-200 ${getPosition('BAMBI')}`}>BAMBI</h1>
+            </div>
+          </div>
+        );
+      };
+
+      const Navigation = ({ currentView, setView }) => {
+        const navItems = [
+          { id: 'home', label: 'Forside' },
+          { id: 'news', label: 'Nyheder' },
+          { id: 'about', label: 'Ensemblet' },
+          { id: 'plus', label: 'WKB+' },
+          { id: 'calendar', label: 'Kalender' },
+        ];
+
+        return (
+          <nav className="fixed top-0 w-full z-40 py-8 px-8 flex justify-between items-start pointer-events-none">
+            <div className="pointer-events-auto cursor-pointer group" onClick={() => setView('home')}>
+              <div className="font-serif text-2xl tracking-tighter font-bold text-wkbInk blend-ink">WhoKilledBambi</div>
+              <div className="h-px w-0 group-hover:w-full bg-wkbInk transition-all duration-500"></div>
+            </div>
+
+            <ul className="pointer-events-auto flex flex-col md:flex-row gap-2 md:gap-8 items-end md:items-center">
+              {navItems.map(item => (
+                <li key={item.id}>
+                  <button onClick={() => setView(item.id)} className={`relative text-xs tracking-[0.2em] uppercase transition-all duration-500 ${currentView === item.id ? 'text-wkbInk font-bold' : 'text-gray-400 hover:text-wkbInk'}`}>
+                    {item.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        );
+      };
+
+      const Footer = () => (
+        <footer className="bg-[#E8E4DD] pt-24 pb-12 px-6 border-t border-wkbInk/5">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-24">
+            <div className="col-span-2">
+              <h2 className="font-serif text-5xl md:text-7xl text-wkbInk mb-8 tracking-tight blend-ink">WhoKilledBambi</h2>
+              <p className="text-wkbInk/60 max-w-md font-serif text-xl italic">
+                Vi skaber musikalske møder, der nedbryder grænserne mellem genrer.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-wkbInk mb-6">Kontakt</h4>
+              <ul className="space-y-4 text-sm text-wkbInk/70">
+                <li><a href="#" className="hover:text-wkbCoral transition-colors">Booking & Presse</a></li>
+                <li><a href="#" className="hover:text-wkbCoral transition-colors">Generelle henvendelser</a></li>
+                <li><a href="#" className="hover:text-wkbCoral transition-colors">Nyhedsbrev</a></li>
+              </ul>
+            </div>
+            <div>
+               <h4 className="text-xs font-bold uppercase tracking-widest text-wkbInk mb-6">Følg Med</h4>
+               <div className="flex gap-4">
+                 <a href="#" className="text-wkbInk/40 hover:text-wkbInk transition-colors">Instagram</a>
+                 <a href="#" className="text-wkbInk/40 hover:text-wkbInk transition-colors">Facebook</a>
+                 <a href="#" className="text-wkbInk/40 hover:text-wkbInk transition-colors">YouTube</a>
+               </div>
+            </div>
+          </div>
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-end border-t border-wkbInk/10 pt-8 text-[10px] uppercase tracking-widest text-wkbInk/30">
+            <span>© 2025 WhoKilledBambi</span>
+            <span>Web by Skouboe</span>
+          </div>
+        </footer>
+      );
+
+      const HomeSection = ({ setView }) => {
+        return (
+          <div className="min-h-screen flex flex-col relative overflow-hidden">
+            {/* TRADEMARK CIRCLE BACKGROUND - RESTORED AS REQUESTED */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full mix-blend-multiply w-96 h-96 opacity-30 bg-wkbCoral animate-pulse-slow blur-3xl z-0 pointer-events-none"></div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full mix-blend-multiply w-[500px] h-[500px] opacity-1 bg-wkbSage blur-3xl z-0 pointer-events-none delay-1000"></div>
+            
+            <div className="flex-grow flex flex-col items-center justify-center text-center px-4 pt-20 relative z-10">
+               {/* SUBTLE BG VIDEO */}
+               <div className="absolute inset-0 -z-20 opacity-30 grayscale mix-blend-multiply">
+                  <video autoPlay loop muted playsInline className="w-full h-full object-cover">
+                    <source src="wkbvid.mp4" type="video/mp4" />
+                  </video>
+               </div>
+
+               <div className="mb-8 fade-in-up">
+                 <span className="text-[10px] tracking-[0.4em] uppercase text-wkbInk/50 font-bold">Det Danske Strygerensemble</span>
+               </div>
+
+               {/* HUGE EDITORIAL HEADER */}
+               <h1 className="text-[14vw] leading-[0.8] font-serif text-wkbInk blend-ink text-editorial mb-12 fade-in-up" style={{animationDelay: '0.1s'}}>
+                 WHO<br/>KILLED<br/><span className="text-wkbCoral">BAMBI</span>
+               </h1>
+               
+               <div className="fade-in-up" style={{animationDelay: '0.3s'}}>
+                 <button onClick={() => setView('calendar')} className="group px-8 py-3 border border-wkbInk/20 rounded-full hover:border-wkbInk transition-all duration-500 flex items-center gap-3 bg-wkbPaper/50 backdrop-blur-sm">
+                   <span className="text-xs uppercase tracking-widest group-hover:mr-2 transition-all">Oplev Koncerter</span>
+                   <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+                 </button>
+               </div>
+            </div>
+
+            {/* INFINITE MARQUEE */}
+            <div className="w-full bg-wkbInk text-wkbPaper py-4 overflow-hidden whitespace-nowrap relative z-20">
+              <div className="inline-flex animate-marquee">
+                {[...COLLABORATORS, ...COLLABORATORS].map((name, i) => (
+                  <span key={i} className="mx-8 text-sm uppercase tracking-widest font-bold opacity-80">{name} + </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const NewsSection = () => {
+        const [news, setNews] = useState([]);
+        const [loading, setLoading] = useState(true);
+        const [error, setError] = useState(null);
+
+        useEffect(() => {
+          const query = `*[_type == "news"] | order(publishedAt desc) {
+            title,
+            publishedAt,
+            body,
+            "imageUrl": mainImage.asset->url
+          }`;
+          
+          fetchSanity(query)
+            .then(data => {
+              setNews(data);
+              setLoading(false);
+            })
+            .catch(err => {
+              setError(true);
+              setLoading(false);
+            });
+        }, []);
+
+        const formatDate = (dateString) => {
+          if (!dateString) return "";
+          const date = new Date(dateString);
+          return date.toLocaleDateString('da-DK', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\./g, '.');
+        };
+
+        // Render body text safely - UPDATED FOR TEXT FIELD
+        const renderBody = (body) => {
+          if (!body) return null;
+          // If it's a Sanity Block Content array (Backwards compatibility if needed)
+          if (Array.isArray(body)) {
+             return body.map((block, i) => {
+               if (block._type === 'block' && block.children) {
+                 return (
+                   <p key={i} className="mb-4">
+                     {block.children.map((child, ci) => (
+                       <span key={ci} className={child.marks && child.marks.includes('strong') ? 'font-bold' : ''}>
+                         {child.text}
+                       </span>
+                     ))}
+                   </p>
+                 );
+               }
+               return null;
+             });
+          }
+          // Handle plain text with newlines
+          return body.split('\n').map((line, i) => 
+            line.trim() !== '' ? <p key={i} className="mb-4">{line}</p> : <br key={i} />
+          );
+        };
+
+        return (
+          <div className="min-h-screen pt-32 px-6 md:px-12 max-w-6xl mx-auto fade-in-up pb-24">
+             <header className="mb-24 text-center">
+                <h2 className="text-6xl md:text-9xl font-serif text-wkbInk blend-ink mb-4">Nyheder</h2>
+                <div className="w-px h-24 bg-wkbInk mx-auto mb-4 opacity-20"></div>
+             </header>
+
+             {loading && (
+               <div className="flex flex-col items-center justify-center py-20 gap-4">
+                 <Loader size={40} className="text-wkbCoral" />
+                 <span className="text-xs uppercase tracking-widest text-wkbInk/50">Henter nyheder...</span>
+               </div>
+             )}
+
+             {error && (
+                <div className="text-center py-20">
+                  <p className="font-serif text-2xl italic text-wkbInk/50">Kunne ikke forbinde til databasen.</p>
+                  <p className="text-xs mt-2 text-wkbInk/30">Tjek at du har sat CORS op i Sanity Dashboard.</p>
+                </div>
+             )}
+
+             {!loading && !error && news.length === 0 && (
+               <div className="text-center py-20">
+                 <p className="font-serif text-2xl italic text-wkbInk/50">Der er ingen nyheder endnu.</p>
+                 <p className="text-xs uppercase tracking-widest text-wkbInk/30 mt-4">Gå til /admin.html for at oprette</p>
+               </div>
+             )}
+
+             <div className="grid gap-20">
+               {news.map((item, idx) => (
+                 <article key={idx} className="group grid md:grid-cols-12 gap-8 border-b border-wkbInk/10 pb-20 relative">
+                    
+                    {/* NEW DISTINCT DATE SECTION */}
+                    <div className="md:col-span-3 md:sticky md:top-32 self-start">
+                       <div className="pl-0 md:pl-6 md:border-l-2 border-wkbCoral/50 py-2">
+                          <span className="block text-xs font-bold uppercase tracking-widest text-wkbInk/40 mb-2">Publiceret</span>
+                          <span className="block text-4xl lg:text-5xl font-serif italic text-wkbCoral blend-ink leading-none">
+                            {formatDate(item.publishedAt)}
+                          </span>
+                       </div>
+                    </div>
+                    
+                    <div className="md:col-span-9">
+                       {item.imageUrl && (
+                         <div className="mb-8 overflow-hidden rounded-sm aspect-video md:aspect-[21/9]">
+                           <img 
+                             src={item.imageUrl} 
+                             alt={item.title} 
+                             className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" 
+                           />
+                         </div>
+                       )}
+                       <h3 className="text-4xl md:text-5xl font-serif text-wkbInk mb-6 group-hover:text-wkbCoral transition-colors duration-300">{item.title}</h3>
+                       <div className="text-lg md:text-xl font-serif text-wkbInk/80 leading-relaxed max-w-3xl">
+                         {renderBody(item.body)}
+                       </div>
+                    </div>
+                 </article>
+               ))}
+             </div>
+          </div>
+        );
+      };
+
+      const AboutSection = () => (
+        <div className="min-h-screen pt-32 px-6 md:px-12 max-w-[1400px] mx-auto fade-in-up">
+           {/* INTRO TEXT - HUGE */}
+           <div className="grid md:grid-cols-12 gap-12 mb-40 border-b border-wkbInk/10 pb-20">
+             <div className="md:col-span-8">
+               <h2 className="text-5xl md:text-7xl lg:text-8xl font-serif text-wkbInk leading-[0.9] blend-ink text-editorial mb-8">
+                 Klassisk elegance.<br/>
+                 <span className="text-wkbSage italic">Moderne vildskab.</span>
+               </h2>
+             </div>
+             <div className="md:col-span-4 flex flex-col justify-end pb-4">
+               <p className="text-lg md:text-xl font-serif italic text-wkbInk/70 leading-relaxed">
+                 Siden 2009 har vi udforsket grænserne for, hvad et strygerensemble kan være. Vi spiller ikke bare noderne; vi skaber fortællinger i spændingsfeltet mellem det akustiske og det elektriske.
+               </p>
+             </div>
+           </div>
+
+           {/* MEMBERS GRID - CLEAN & SOPHISTICATED */}
+           <div className="mb-20">
+             <div className="flex justify-between items-end mb-12">
+               <h3 className="text-sm font-bold uppercase tracking-widest text-wkbInk/40">Musikerne</h3>
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-12">
+               {MEMBERS_DATA.map((member, idx) => (
+                 <div key={idx} className="group cursor-none">
+                   <div className="aspect-[3/4] overflow-hidden mb-4 relative bg-[#E0DCD5]">
+                     <img 
+                       src={member.imageUrl} 
+                       alt={member.name} 
+                       className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 ease-in-out group-hover:scale-105" 
+                     />
+                     <div className="absolute inset-0 bg-wkbInk/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 mix-blend-multiply"></div>
+                   </div>
+                   <h4 className="text-2xl font-serif italic text-wkbInk blend-ink">{member.name}</h4>
+                   <p className="text-xs uppercase tracking-widest text-wkbSage mt-1">{member.instrument}</p>
+                 </div>
+               ))}
+             </div>
+           </div>
+        </div>
+      );
+      
+      const PlusSection = () => {
+        const videoRef = useRef(null);
+        const [isMuted, setIsMuted] = useState(true);
+        
+        const toggleMute = () => {
+           if (videoRef.current) {
+             videoRef.current.muted = !videoRef.current.muted;
+             setIsMuted(!isMuted);
+           }
+        };
+
+        return (
+          <div className="min-h-screen pt-32 px-6 md:px-12 max-w-6xl mx-auto fade-in-up pb-24">
+             <header className="mb-24 text-center">
+                <h2 className="text-6xl md:text-9xl font-serif text-wkbInk blend-ink mb-4">
+                  WKB<span className="text-wkbCoral">+</span>
+                </h2>
+                <p className="text-sm uppercase tracking-widest text-wkbInk/50">Udvalgte Samarbejder</p>
+             </header>
+             
+             {/* MARIAM */}
+             <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center mb-32">
+                <div className="order-2 md:order-1">
+                   <div className="relative overflow-hidden rounded-sm aspect-[4/3]">
+                      <img 
+                        src="https://static.wixstatic.com/media/d3f0ae_e4acfcc0442e47ccbd5595014470fabe~mv2.jpg/v1/fill/w_442,h_331,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Mariam%20Wallentin%20%26%20Who%20Killed%20Bambi_03%20(giesenbauer).jpg" 
+                        alt="Mariam Wallentin & WKB" 
+                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
+                      />
+                      <div className="absolute bottom-2 left-4 text-[10px] text-white/70 uppercase tracking-wider">Foto: Bjørn Giesenbauer</div>
+                   </div>
+                </div>
+                <div className="order-1 md:order-2">
+                   <div className="mb-2 text-xs font-bold uppercase tracking-widest text-wkbCoral">Who Killed Bambi +</div>
+                   <h3 className="text-4xl md:text-5xl font-serif italic text-wkbInk mb-8">Mariam Wallentin</h3>
+                   <blockquote className="text-lg md:text-xl font-serif text-wkbInk/80 leading-relaxed mb-8 border-l-2 border-wkbSage/30 pl-6">
+                     "I Mariam the Believer-sangen "Invisible Giving" har jeg svært ved at holde benene i ro, selvom der ingen slagtøj er på scenen. De fem strygere groover simpelthen for vildt, og de to celloer lyder næsten som en kontrabas. 
+                     (...) Med en stemme, sange og strenge kan man nå meget langt, når råvarerne og behandlingen af dem er på så tårnhøjt niveau som her."
+                   </blockquote>
+                   <div className="flex items-center gap-4">
+                      <div className="text-xs font-bold uppercase tracking-widest text-wkbInk">Ole Rosenstadt Svidt, Gaffa</div>
+                      <div className="text-wkbCoral tracking-widest text-lg">★★★★★</div>
+                   </div>
+                </div>
+             </div>
+
+             {/* LUCKY LO */}
+             <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center mb-40 border-t border-wkbInk/10 pt-20">
+                <div className="order-1">
+                   <div className="mb-2 text-xs font-bold uppercase tracking-widest text-wkbCoral">Who Killed Bambi +</div>
+                   <h3 className="text-4xl md:text-5xl font-serif italic text-wkbInk mb-8">Lucky Lo</h3>
+                   <blockquote className="text-lg md:text-xl font-serif text-wkbInk/80 leading-relaxed mb-8 border-l-2 border-wkbSage/30 pl-6">
+                     "Foreningen af sangeren og strygerne var lige præcis så magisk, som man turde håbe på.
+                     Lyden var flydende, drømmende, legende og med et utroligt nærvær fra scenen. Selv de små musikalske finurligheder blev oversat af strygerne og forenede på fineste vis lyden af Lucky Lo med lyden af Who Killed Bambi.
+                     Publikum kvitterede med et stående bifald."
+                   </blockquote>
+                   <div className="flex items-center gap-4">
+                      <div className="text-xs font-bold uppercase tracking-widest text-wkbInk">Siff Haar-Lund, Gaffa</div>
+                      <div className="text-wkbCoral tracking-widest text-lg">★★★★★</div>
+                   </div>
+                </div>
+                <div className="order-2 group relative rounded-sm overflow-hidden shadow-2xl">
+                   <video 
+                     ref={videoRef}
+                     src="https://video.wixstatic.com/video/d3f0ae_b2e0dca052e34c59bc66b2b14aac99c0/360p/mp4/file.mp4" 
+                     autoPlay 
+                     loop 
+                     muted 
+                     playsInline 
+                     className="w-full aspect-video object-cover"
+                   />
+                   <button 
+                      onClick={toggleMute}
+                      className="absolute bottom-4 right-4 w-10 h-10 bg-wkbPaper/80 backdrop-blur-md rounded-full flex items-center justify-center text-wkbInk hover:text-wkbCoral transition-colors"
+                   >
+                      {isMuted ? <SpeakerOff size={16} /> : <Speaker size={16} />}
+                   </button>
+                </div>
+             </div>
+             
+             {/* INFO TEXT */}
+             <div className="max-w-3xl mx-auto bg-white/40 backdrop-blur-sm p-8 md:p-12 rounded-sm border border-wkbInk/5">
+                <h3 className="text-3xl font-serif text-wkbInk mb-6">Hvad er Who Killed Bambi+?</h3>
+                <div className="space-y-6 text-wkbInk/80 font-serif text-lg leading-relaxed">
+                  <p>
+                    <span className="font-bold text-wkbInk">Who Killed Bambi+</span> eller ganske kort WKB+ er en række af unikke koncerter, hvor alle elementer udføres af sangstemmer og strygere - nyfortolkninger udført af os i samspil med artisten selv. Vores husarrangør og bratschist Mette Dahl Kristensen skræddersyer sangskriverens katalog til vores besætning og vi bearbejder lyd og groove med ambitiøs nysgerrighed, indtil nummeret rammer os og publikum med styrke og autenticitet.
+                  </p>
+                  <p>
+                    WKB+ har budt på samarbejder med en lang række interessante nordiske artister og anmelderroste optrædener på koncertsteder som Kulturmødet på Mors, Musikhuset Aarhus og Ofelia Plads (Det Kongelige Teater).
+                  </p>
+                  <p>
+                    Vores diskografi inkluderer debutalbummet '+' (2015) med kunstnere som Pernille Rosendahl og Ane Brun, det selvbetitlede 'Who Killed Bambi' (2019) med strygerkompositioner af Mette Dahl Kristensen, og '12' (2021) med nordiske kunstnere som Sandra Kolstad, Eivør og Lydmor.
+                  </p>
+                  <p className="italic text-sm text-wkbSage">
+                    I december 2022 afholdte vi en enestående live koncertopførsel af albummet '12" med alle albummets 12 solister, tre pigekor og lyskunst i Store Sal i Musikhuset Aarhus støttet af Kirsten og Gunnar Fonden.
+                  </p>
+                </div>
+             </div>
+
+          </div>
+        );
+      };
+
+      const CalendarSection = () => {
+        const [events, setEvents] = useState([]);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+          const query = `*[_type == "event"] | order(date asc) {
+            title,
+            subtitle,
+            date,
+            location,
+            ticketLink,
+            theme
+          }`;
+          
+          fetchSanity(query)
+            .then(data => {
+              setEvents(data);
+              setLoading(false);
+            })
+            .catch(err => {
+              console.error(err);
+              setLoading(false);
+            });
+        }, []);
+
+        const formatDayMonth = (dateString) => {
+          if (!dateString) return "??.??";
+          const date = new Date(dateString);
+          return date.toLocaleDateString('da-DK', { day: '2-digit', month: '2-digit' }).replace(/\./g, '.');
+        };
+
+        const formatYear = (dateString) => {
+           if (!dateString) return "";
+           return new Date(dateString).getFullYear();
+        };
+
+        return (
+          <div className="min-h-screen pt-32 px-4 max-w-6xl mx-auto fade-in-up pb-20">
+            <header className="mb-24 text-center">
+              <h2 className="text-6xl md:text-9xl font-serif text-wkbInk blend-ink mb-4">Koncerter</h2>
+              <div className="w-px h-24 bg-wkbInk mx-auto mb-4 opacity-20"></div>
+            </header>
+            
+            {loading ? (
+               <div className="flex flex-col items-center justify-center py-20 gap-4">
+                 <Loader size={40} className="text-wkbSage" />
+                 <span className="text-xs uppercase tracking-widest text-wkbInk/50">Henter kalender...</span>
+               </div>
+            ) : (
+              <div>
+                {events.length === 0 && (
+                  <div className="text-center py-20">
+                     <p className="font-serif text-2xl italic text-wkbInk/50">Ingen kommende koncerter.</p>
+                     <p className="text-xs uppercase tracking-widest text-wkbInk/30 mt-4">Opret dem i admin panelet</p>
+                  </div>
+                )}
+
+                {events.map((event, idx) => (
+                  <a href={event.ticketLink || '#'} key={idx} className="group block border-t border-wkbInk/10 hover:border-wkbInk transition-colors duration-500">
+                    <div className="py-12 flex flex-col md:flex-row md:items-baseline gap-8 px-4 hover:bg-white/30 transition-colors duration-500">
+                      <div className="w-32 shrink-0">
+                        <span className={`text-5xl font-serif italic ${event.theme || 'text-wkbInk'} blend-ink block`}>
+                          {formatDayMonth(event.date)}
+                        </span>
+                        <span className="text-xs font-bold text-wkbInk/30 block mt-2">{formatYear(event.date)}</span>
+                      </div>
+                      <div className="grow">
+                        <h3 className="text-3xl md:text-5xl font-serif text-wkbInk mb-2 group-hover:translate-x-4 transition-transform duration-500 ease-out">{event.title}</h3>
+                        <p className="text-sm uppercase tracking-widest text-wkbInk/50 group-hover:translate-x-4 transition-transform duration-500 delay-75">{event.subtitle}</p>
+                      </div>
+                      <div className="w-48 text-right shrink-0">
+                        <span className="text-lg font-serif italic text-wkbInk/60 block mb-2">{event.location}</span>
+                        <span className="text-[10px] uppercase tracking-widest font-bold text-wkbInk opacity-0 group-hover:opacity-100 transition-opacity duration-300">Køb Billet →</span>
+                      </div>
+                    </div>
+                  </a>
+                ))}
+                <div className="border-t border-wkbInk/10"></div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      const App = () => {
+        const [view, setView] = useState('intro'); 
+        return (
+          <main className="relative w-full min-h-screen bg-wkbPaper">
+            <div className="noise"></div>
+            <Spotlight />
+            <AudioPlayer />
+            
+            <div className="relative z-10">
+              {view === 'intro' && <IntroSequence onComplete={() => setView('home')} />}
+              {view !== 'intro' && (
+                <>
+                  <Navigation currentView={view} setView={setView} />
+                  {view === 'home' && <HomeSection setView={setView} />}
+                  {view === 'news' && <NewsSection />}
+                  {view === 'about' && <AboutSection />}
+                  {view === 'plus' && <PlusSection />}
+                  {view === 'calendar' && <CalendarSection />}
+                  <Footer />
+                </>
+              )}
+            </div>
+          </main>
+        );
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StageReadyWeb CMS | Visual Builder X</title>
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-app: #050505;
+            --bg-panel: #121212;
+            --bg-panel-hover: #1e1e1e;
+            --accent: #d4ff00; /* Acid Green for "Pro" feel */
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --border: #333333;
+            --selection: #ffffff;
+            --spacing: 1rem;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- LEFT SIDEBAR: Components --- */
+        .sidebar-left {
+            width: 280px;
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .brand {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .brand span { color: var(--accent); }
+
+        .components-list {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .category-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .draggable-item {
+            background-color: var(--bg-panel-hover);
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .draggable-item:hover {
+            border-color: var(--text-muted);
+            transform: translateX(5px);
+        }
+
+        .draggable-item i { color: var(--text-muted); width: 20px; text-align: center; }
+        
+        /* Badge for Headliner features */
+        .badge-pro {
+            margin-left: auto;
+            background: var(--accent);
+            color: black;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        /* --- CENTER: Canvas --- */
+        .canvas-area {
+            flex: 1;
+            background-color: #000; /* Pure black for focus */
+            overflow-y: auto;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* The Website Page Container */
+        .page-container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: white; /* White website bg */
+            min-height: 1000px;
+            color: black;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        /* Drop Zones */
+        .drop-zone {
+            min-height: 100px;
+            border: 2px dashed transparent;
+            transition: 0.2s;
+            position: relative;
+        }
+        .drop-zone:hover { border-color: var(--accent); }
+
+        /* The Blocks (User Content) */
+        .block-wrapper {
+            position: relative;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .block-wrapper:hover {
+            border: 2px solid var(--accent);
+            z-index: 2;
+        }
+
+        .block-controls {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: black;
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s;
+            white-space: nowrap;
+            display: flex;
+            gap: 10px;
+        }
+
+        .block-wrapper:hover .block-controls {
+            opacity: 1;
+            top: -35px;
+            pointer-events: all;
+        }
+
+        /* Content Styling Mockups */
+        .mock-hero {
+            height: 600px;
+            background: #222;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: url('https://picsum.photos/seed/bandhero/1200/600');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .mock-hero::after { content:''; position: absolute; inset: 0; background: rgba(0,0,0,0.4); }
+        .mock-hero h1 { position: relative; z-index: 2; font-size: 4rem; text-transform: uppercase; text-align: center; }
+
+        .mock-tour-list { padding: 40px; background: #fff; }
+        .tour-row { display: flex; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid #eee; }
+        
+        .mock-release-grid { padding: 40px; background: #f4f4f4; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .album-cover { background: #333; aspect-ratio: 1; width: 100%; }
+
+        /* --- RIGHT SIDEBAR: Inspector --- */
+        .sidebar-right {
+            width: 320px;
+            background-color: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .inspector-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .inspector-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px; }
+        
+        .form-input, .form-select {
+            width: 100%;
+            background: var(--bg-app);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+        .form-input:focus { border-color: var(--accent); }
+
+        .btn-action {
+            width: 100%;
+            background: white;
+            color: black;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .btn-action:hover { background: #eee; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar-left, .sidebar-right { display: none; } /* Simplified for mobile mock */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- VENSTRE: Moduler -->
+    <nav class="sidebar-left">
+        <div class="brand">
+            <i class="fa-solid fa-bolt"></i> ARTIST<span>CMS</span>
+        </div>
+        
+        <div class="components-list">
+            <div class="category-title">Layout (Pulse)</div>
+            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="hero">
+                <i class="fa-solid fa-panorama"></i> Hero Section
+            </div>
+            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="text">
+                <i class="fa-solid fa-align-left"></i> Tekstblok
+            </div>
+            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="image">
+                <i class="fa-regular fa-image"></i> Billede/Galleri
+            </div>
+
+            <div class="category-title" style="margin-top: 30px;">Indhold (Pulse)</div>
+            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="tour">
+                <i class="fa-solid fa-calendar-days"></i> Tour / Kalender
+            </div>
+            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="music">
+                <i class="fa-solid fa-music"></i> Releases / Spotify
+            </div>
+            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="merch">
+                <i class="fa-solid fa-shirt"></i> Merch Shop
+            </div>
+
+            <div class="category-title" style="margin-top: 30px;">Avanceret (Headliner)</div>
+            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="video-parallax">
+                <i class="fa-solid fa-film"></i> Video Parallax <span class="badge-pro">PRO</span>
+            </div>
+            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="campaign-hub">
+                <i class="fa-solid fa-bullhorn"></i> Campaign Hub <span class="badge-pro">PRO</span>
+            </div>
+            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="motion-text">
+                <i class="fa-solid fa-bezier-curve"></i> Motion Text <span class="badge-pro">PRO</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MIDTEN: Canvas (Byggeren) -->
+    <main class="canvas-area" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <div class="page-container" id="page-content">
+            
+            <!-- Existing Content Mockup -->
+            <div class="block-wrapper" id="hero-1" onclick="selectBlock('Hero Section')">
+                <div class="block-controls">
+                    <span>Rediger Hero</span>
+                </div>
+                <div class="mock-hero">
+                    <h1>THE BAND NAME</h1>
+                </div>
+            </div>
+
+            <div class="block-wrapper" id="tour-1" onclick="selectBlock('Tour List')">
+                <div class="block-controls">
+                    <span>Rediger Tour</span>
+                </div>
+                <div class="mock-tour-list">
+                    <div class="category-title" style="color:#333; margin-bottom:20px;">KOMMENDE KONCERTER</div>
+                    <div class="tour-row">
+                        <span><strong>15. Aug</strong> - Vega, København</span>
+                        <button style="background:black; color:white; border:none; padding:5px 15px; cursor:pointer;">Køb Billet</button>
+                    </div>
+                    <div class="tour-row">
+                        <span><strong>22. Aug</strong> - Train, Aarhus</span>
+                        <button style="background:black; color:white; border:none; padding:5px 15px; cursor:pointer;">Køb Billet</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty Drop Zone for adding more -->
+            <div class="drop-zone" style="height: 200px; display: flex; align-items: center; justify-content: center; color: #ccc; border-style: dashed;">
+                <i class="fa-solid fa-plus"></i> &nbsp; Træk moduler hertil
+            </div>
+
+        </div>
+    </main>
+
+    <!-- HØJRE: Egenskaber (Inspector) -->
+    <aside class="sidebar-right">
+        <div class="inspector-header">
+            <span id="inspector-title">Ingenting valgt</span>
+            <i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="deselect()"></i>
+        </div>
+        
+        <div class="inspector-content" id="inspector-body" style="display:none;">
+            <div class="form-group">
+                <label>Overskrift</label>
+                <input type="text" class="form-input" value="THE BAND NAME">
+            </div>
+            
+            <div class="form-group">
+                <label>Baggrund</label>
+                <div style="display:flex; gap:10px;">
+                    <div style="width:50px; height:50px; background:#333; border-radius:4px; cursor:pointer; border:2px solid var(--accent);"></div>
+                    <div style="width:50px; height:50px; background:#555; border-radius:4px; cursor:pointer;"></div>
+                    <div style="width:50px; height:50px; background:#111; border-radius:4px; cursor:pointer;"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Animation (Headliner Feature)</label>
+                <select class="form-select">
+                    <option>Ingen</option>
+                    <option>Fade In</option>
+                    <option>Slide Up</option>
+                    <option>Parallax Scroll</option>
+                </select>
+            </div>
+
+            <button class="btn-action">Gem Ændringer</button>
+            <button class="btn-action" style="background:transparent; border:1px solid #333; color:#888; margin-top:10px;">Sektion Slet</button>
+        </div>
+
+        <div id="empty-state" style="padding:40px; text-align:center; color:#555;">
+            <i class="fa-solid fa-arrow-pointer" style="font-size:2rem; margin-bottom:15px;"></i>
+            <p>Klik på en sektion for at redigere indhold, billeder og links.</p>
+        </div>
+    </aside>
+
+    <script>
+        function allowDrop(ev) {
+            ev.preventDefault();
+            // Visual cue could be added here
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("type", ev.target.dataset.type);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            var type = ev.dataTransfer.getData("type");
+            const container = document.getElementById('page-content');
+            
+            // Simuler at vi tilføjer en ny blok baseret på typen
+            const newBlock = document.createElement('div');
+            newBlock.className = 'block-wrapper';
+            newBlock.onclick = function() { selectBlock('Ny ' + type); };
+            
+            let contentHTML = '';
+            
+            if(type === 'tour') {
+                contentHTML = `
+                <div class="block-controls"><span>Rediger Tour</span></div>
+                <div class="mock-tour-list" style="background:#f9f9f9; padding:20px; text-align:center; color:#888;">
+                    <i class="fa-regular fa-calendar-plus" style="font-size:2rem;"></i><br>
+                    Ny Tour Liste (Klik for at redigere)
+                </div>`;
+            } else if (type === 'video-parallax') {
+                 contentHTML = `
+                <div class="block-controls"><span>Rediger Video (PRO)</span></div>
+                <div style="height:300px; background:#000; color:#555; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid fa-play-circle" style="font-size:3rem;"></i>
+                </div>`;
+            } else {
+                contentHTML = `
+                <div class="block-controls"><span>Rediger Sektion</span></div>
+                <div style="padding:40px; background:#eee; text-align:center;">
+                    Ny ${type} Sektion
+                </div>`;
+            }
+
+            newBlock.innerHTML = contentHTML;
+            container.insertBefore(newBlock, container.lastElementChild);
+        }
+
+        function selectBlock(title) {
+            document.getElementById('inspector-title').innerText = title;
+            document.getElementById('inspector-body').style.display = 'block';
+            document.getElementById('empty-state').style.display = 'none';
+        }
+
+        function deselect() {
+            document.getElementById('inspector-title').innerText = 'Ingenting valgt';
+            document.getElementById('inspector-body').style.display = 'none';
+            document.getElementById('empty-state').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
