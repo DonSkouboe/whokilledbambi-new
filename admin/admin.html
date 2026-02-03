@@ -196,6 +196,7 @@
         .list {
             display: grid;
             gap: 12px;
+            min-height: 200px;
         }
 
         .list-item {
@@ -427,9 +428,15 @@
 
             .page-container {
                 width: 100%;
-                min-height: auto;
+                min-height: 60vh;
                 padding: 16px;
                 box-shadow: none;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .list {
+                min-height: 240px;
             }
 
             .sidebar-right {
