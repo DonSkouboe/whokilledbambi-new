@@ -110,7 +110,7 @@
 
         .page-container {
             width: 100%;
-            max-width: 100%;
+            max-width: 1100px;
             background-color: white;
             min-height: calc(100vh - 64px);
             color: black;
@@ -352,7 +352,13 @@
         /* Responsive */
         @media (max-width: 1024px) {
             .sidebar-left, .sidebar-right { display: none; }
-            .page-container { padding: 16px; }
+            .canvas-area { padding: 16px; }
+            .page-container {
+                max-width: 100%;
+                min-height: auto;
+                padding: 16px;
+                box-shadow: none;
+            }
         }
     </style>
 </head>
