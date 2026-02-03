@@ -532,10 +532,16 @@
         const inspectorTitle = document.getElementById('inspector-title');
         const emptyState = document.getElementById('empty-state');
         const loginStatus = document.getElementById('login-status');
+        const inspectorPane = document.querySelector('.sidebar-right');
 
         const setStatus = (message, isError = false) => {
             loginStatus.textContent = message;
             loginStatus.style.color = isError ? '#f97066' : '#999';
+        };
+
+        const focusInspector = () => {
+            if (!inspectorPane) return;
+            inspectorPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
 
         const toEmail = (username) => `${username.trim().toLowerCase()}@wkb.example`;
@@ -671,6 +677,7 @@
             inspectorBody.style.display = 'block';
             emptyState.style.display = 'none';
             renderForm();
+            focusInspector();
         };
 
         const newItem = () => {
@@ -679,6 +686,7 @@
             inspectorBody.style.display = 'block';
             emptyState.style.display = 'none';
             renderForm();
+            focusInspector();
         };
 
         const formatDateInput = (value) => {
