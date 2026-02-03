@@ -936,6 +936,8 @@
             });
             if (error) return setStatus('Login fejlede. Tjek brugernavn og adgangskode.', true);
             setStatus('');
+            showLogin(false);
+            setSection(state.section);
         });
 
         document.getElementById('signup-btn').addEventListener('click', async () => {
