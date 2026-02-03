@@ -533,6 +533,7 @@
         const emptyState = document.getElementById('empty-state');
         const loginStatus = document.getElementById('login-status');
         const inspectorPane = document.querySelector('.sidebar-right');
+        const listPane = document.querySelector('.page-container');
 
         const setStatus = (message, isError = false) => {
             loginStatus.textContent = message;
@@ -542,6 +543,11 @@
         const focusInspector = () => {
             if (!inspectorPane) return;
             inspectorPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const focusList = () => {
+            if (!listPane) return;
+            listPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
 
         const toEmail = (username) => `${username.trim().toLowerCase()}@wkb.example`;
@@ -570,6 +576,7 @@
             inspectorBody.style.display = 'none';
             emptyState.style.display = 'block';
             inspectorTitle.textContent = 'Ingenting valgt';
+                focusList();
             document.getElementById('section-title').textContent = section === 'content' ? 'Side-indhold' : section.charAt(0).toUpperCase() + section.slice(1);
             document.getElementById('section-meta').textContent = sectionMeta[section] || '';
             setActiveNav(section);
@@ -736,6 +743,7 @@
                         <textarea id="field-body" class="form-textarea">${item.body || ''}</textarea>
                     </div>
                     <button class="btn-action" data-action="save">Gem ændringer</button>
+                    <button class="btn-action" data-action="cancel" style="background: transparent; border: 1px solid #333; color: #bbb;">Annuller</button>
                     <button class="btn-action" data-action="delete" style="background: transparent; border: 1px solid #333; color: #888;">Slet nyhed</button>
                 `;
             }
@@ -771,6 +779,7 @@
                         </select>
                     </div>
                     <button class="btn-action" data-action="save">Gem ændringer</button>
+                    <button class="btn-action" data-action="cancel" style="background: transparent; border: 1px solid #333; color: #bbb;">Annuller</button>
                     <button class="btn-action" data-action="delete" style="background: transparent; border: 1px solid #333; color: #888;">Slet koncert</button>
                 `;
             }
@@ -798,6 +807,7 @@
                         <input id="field-order" class="form-input" type="number" value="${item.sort_order ?? 0}">
                     </div>
                     <button class="btn-action" data-action="save">Gem ændringer</button>
+                    <button class="btn-action" data-action="cancel" style="background: transparent; border: 1px solid #333; color: #bbb;">Annuller</button>
                     <button class="btn-action" data-action="delete" style="background: transparent; border: 1px solid #333; color: #888;">Slet medlem</button>
                 `;
             }
@@ -813,6 +823,7 @@
                         <input id="field-order" class="form-input" type="number" value="${item.sort_order ?? 0}">
                     </div>
                     <button class="btn-action" data-action="save">Gem ændringer</button>
+                    <button class="btn-action" data-action="cancel" style="background: transparent; border: 1px solid #333; color: #bbb;">Annuller</button>
                     <button class="btn-action" data-action="delete" style="background: transparent; border: 1px solid #333; color: #888;">Slet navn</button>
                 `;
             }
@@ -832,6 +843,7 @@
                         <textarea id="field-json" class="form-textarea">${item.data ? JSON.stringify(item.data, null, 2) : '{}'}</textarea>
                     </div>
                     <button class="btn-action" data-action="save">Gem ændringer</button>
+                    <button class="btn-action" data-action="cancel" style="background: transparent; border: 1px solid #333; color: #bbb;">Annuller</button>
                     <button class="btn-action" data-action="delete" style="background: transparent; border: 1px solid #333; color: #888;">Slet side</button>
                 `;
             }
@@ -842,8 +854,19 @@
         const attachFormActions = () => {
             const saveBtn = inspectorBody.querySelector('[data-action="save"]');
             const deleteBtn = inspectorBody.querySelector('[data-action="delete"]');
+            const cancelBtn = inspectorBody.querySelector('[data-action="cancel"]');
             if (saveBtn) saveBtn.addEventListener('click', saveItem);
             if (deleteBtn) deleteBtn.addEventListener('click', deleteItem);
+            if (cancelBtn) cancelBtn.addEventListener('click', cancelEdit);
+        };
+
+        const cancelEdit = () => {
+            state.selected = null;
+            inspectorBody.style.display = 'none';
+            emptyState.style.display = 'block';
+            inspectorTitle.textContent = 'Ingenting valgt';
+                focusList();
+            focusList();
         };
 
         const saveItem = async () => {
