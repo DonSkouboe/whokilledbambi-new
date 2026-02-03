@@ -2,136 +2,34 @@
 <html lang="da">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <title>WhoKilledBambi Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Admin</title>
     <style>
-      html,
-      body,
-      #app {
+      html, body {
         height: 100%;
         margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: #f2efe9;
+        color: #1a1c1b;
       }
+      .wrap {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+      }
+      a { color: inherit; }
     </style>
   </head>
   <body>
-    <div id="app"></div>
-
-    <!-- VIGTIGT: Import Map låser versionerne, så vi undgår React 19 fejl -->
-    <script type="importmap">
-      {
-        "imports": {
-          "react": "https://esm.sh/react@18.2.0",
-          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-          "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
-          "sanity": "https://esm.sh/sanity@3.36.0?deps=react@18.2.0,react-dom@18.2.0,styled-components@6.1.8",
-          "sanity/structure": "https://esm.sh/sanity@3.36.0/structure?deps=react@18.2.0,react-dom@18.2.0,styled-components@6.1.8",
-          "styled-components": "https://esm.sh/styled-components@6.1.8?deps=react@18.2.0,react-dom@18.2.0"
-        }
-      }
-    </script>
-
-    <script type="module">
-      import { defineConfig, renderStudio } from 'sanity'
-      import { structureTool } from 'sanity/structure'
-
-      // --- SCHEMA: NYHED ---
-      const newsSchema = {
-        name: 'news',
-        title: 'Nyhed',
-        type: 'document',
-        fields: [
-          {
-            name: 'title',
-            title: 'Overskrift',
-            type: 'string',
-            validation: Rule => Rule.required()
-          },
-          {
-            name: 'publishedAt',
-            title: 'Udgivelsesdato',
-            type: 'datetime',
-            initialValue: (new Date()).toISOString(),
-          },
-          {
-            name: 'mainImage',
-            title: 'Billede',
-            type: 'image',
-            options: {
-              hotspot: true,
-            },
-          },
-          {
-            name: 'body',
-            title: 'Tekst',
-            description: 'Skriv din tekst her. Brug Enter for at lave nye afsnit.',
-            type: 'text',
-            rows: 15
-          },
-        ],
-      }
-
-      // --- SCHEMA: KONCERT (EVENT) ---
-      const eventSchema = {
-        name: 'event',
-        title: 'Koncert',
-        type: 'document',
-        fields: [
-          {
-            name: 'title',
-            title: 'Titel (f.eks. Who Killed Bambi + Artister)',
-            type: 'string',
-            validation: Rule => Rule.required()
-          },
-          {
-            name: 'subtitle',
-            title: 'Undertitel / Beskrivelse',
-            type: 'string'
-          },
-          {
-            name: 'date',
-            title: 'Dato og Tid',
-            type: 'datetime',
-            validation: Rule => Rule.required()
-          },
-          {
-            name: 'location',
-            title: 'Sted (f.eks. Musikhuset Aarhus)',
-            type: 'string'
-          },
-          {
-            name: 'ticketLink',
-            title: 'Billetlink',
-            type: 'url'
-          },
-          {
-            name: 'theme',
-            title: 'Farvetema',
-            type: 'string',
-            options: {
-              list: [
-                { title: 'Coral (Rød)', value: 'text-wkbCoral' },
-                { title: 'Sage (Grøn)', value: 'text-wkbSage' },
-                { title: 'Ink (Sort)', value: 'text-wkbInk' }
-              ],
-            },
-            initialValue: 'text-wkbInk'
-          }
-        ]
-      }
-
-      const config = defineConfig({
-        projectId: 'cv7t8a8f',
-        dataset: 'production',
-        plugins: [structureTool()],
-        schema: {
-          types: [newsSchema, eventSchema],
-        },
-      })
-
-      renderStudio(document.getElementById('app'), config)
-    </script>
+    <div class="wrap">
+      <div>
+        <h1>Admin</h1>
+        <p>Denne side bruges ikke længere.</p>
+        <p>Gå til <a href="/admin/admin.html">/admin/admin.html</a>.</p>
+      </div>
+    </div>
   </body>
 </html>

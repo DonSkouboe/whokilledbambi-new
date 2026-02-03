@@ -23,6 +23,9 @@
     <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
       tailwind.config = {
         theme: {
@@ -131,23 +134,10 @@
     <script type="text/babel">
       const { useState, useEffect, useRef } = React;
       
-      // --- SANITY CLIENT CONFIG ---
-      const PROJECT_ID = 'cv7t8a8f';
-      const DATASET = 'production';
-      
-      // Helper function to fetch data from Sanity
-      const fetchSanity = async (query) => {
-        const encodedQuery = encodeURIComponent(query);
-        const url = `https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${encodedQuery}`;
-        try {
-          const response = await fetch(url);
-          const json = await response.json();
-          return json.result || [];
-        } catch (error) {
-          console.error("Sanity Fetch Error:", error);
-          throw error;
-        }
-      };
+      // --- SUPABASE CLIENT CONFIG ---
+      const SUPABASE_URL = 'https://rtblicylmsfhpeggqmlp.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_7b6MrtzuIoPBz0RiC9YDEg_v6khvC2y';
+      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // --- ICONS ---
       const ArrowRight = ({ size = 24, className = "" }) => (
@@ -170,7 +160,7 @@
       );
 
       // --- DATA ---
-      const MEMBERS_DATA = [
+      const DEFAULT_MEMBERS_DATA = [
         { name: "Anna Sakham Jalving", instrument: "Violin", imageUrl: "https://static.wixstatic.com/media/d3f0ae_0052268835dc494f988a12393faf0619~mv2.jpg/v1/crop/x_733,y_169,w_2037,h_2291/fill/w_500,h_600,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Presse2022_MatiasBager4103.jpg" },
         { name: "Benedikte Borum Engell", instrument: "Cello", imageUrl: "https://static.wixstatic.com/media/d3f0ae_c7f9ce2cc6754dcb82e6a55eaf998899~mv2.jpg/v1/crop/x_605,y_0,w_2290,h_2625/fill/w_500,h_600,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Presse2022_MatiasBager4084.jpg" },
         { name: "Mette Dahl Kristensen", instrument: "Bratsch", imageUrl: "https://static.wixstatic.com/media/d3f0ae_a7738640eb22483e8b874292671309ff~mv2.jpg/v1/crop/x_712,y_245,w_2077,h_2380/fill/w_500,h_600,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Presse2022_MatiasBager4119%20(1).jpg" },
@@ -179,7 +169,66 @@
         { name: "Silke Kirstine Ekmann Kidholm", instrument: "Violin", imageUrl: "https://static.wixstatic.com/media/d3f0ae_a02aca9ac4a740b3b4436e939937fd78~mv2.jpg/v1/crop/x_766,y_339,w_1947,h_2381/fill/w_500,h_600,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Presse2022_MatiasBager4162%20(1).jpg" }
       ];
       
-      const COLLABORATORS = ["Signe Svendsen", "Brimheim", "Mads Langer", "Steffen Brandt", "Claus Hempler", "eee gee", "Peter Sommer", "Simon Kvamm", "Emma Sehested Høeg", "Father John Misty", "Jacob Bellens", "Nicklas Sahl", "Lucky Lo", "Fallulah", "Oh Land", "Jenny Wilson", "Puk Qvortrup", "Kira Skov", "Ginne Marker", "Asbjørn", "Teitur", "Ida Wenøe", "Teatret Møllen", "ROYA", "Hjalte Ross", "Søren Huss", "Mathilde Falch", "Mumle", "De Eneste To", "Hvalfugl", "Reveal Party", "Rikke Thomsen", "Hugo Helmig", "Sebastian Wolff", "Benjamin Hav", "Pernille Rosendahl", "Karen Troldborg", "Thomas Helmig", "Guldimund", "Jonas H. Petersen", "ELBA", "Rod Stewart", "Baloosh", "Lydmor", "Mattias Kolstrup", "Katinka", "Caroline Henderson", "Lowly", "Thomas Buttenschøn"];
+      const DEFAULT_COLLABORATORS = ["Signe Svendsen", "Brimheim", "Mads Langer", "Steffen Brandt", "Claus Hempler", "eee gee", "Peter Sommer", "Simon Kvamm", "Emma Sehested Høeg", "Father John Misty", "Jacob Bellens", "Nicklas Sahl", "Lucky Lo", "Fallulah", "Oh Land", "Jenny Wilson", "Puk Qvortrup", "Kira Skov", "Ginne Marker", "Asbjørn", "Teitur", "Ida Wenøe", "Teatret Møllen", "ROYA", "Hjalte Ross", "Søren Huss", "Mathilde Falch", "Mumle", "De Eneste To", "Hvalfugl", "Reveal Party", "Rikke Thomsen", "Hugo Helmig", "Sebastian Wolff", "Benjamin Hav", "Pernille Rosendahl", "Karen Troldborg", "Thomas Helmig", "Guldimund", "Jonas H. Petersen", "ELBA", "Rod Stewart", "Baloosh", "Lydmor", "Mattias Kolstrup", "Katinka", "Caroline Henderson", "Lowly", "Thomas Buttenschøn"];
+
+      const DEFAULT_HOME_CONTENT = {
+        tagline: "Det Danske Strygerensemble",
+        title_lines: ["WHO", "KILLED", "BAMBI"],
+        highlight_index: 2,
+        highlight_class: 'text-wkbCoral',
+        cta_label: "Oplev Koncerter"
+      };
+
+      const DEFAULT_ABOUT_CONTENT = {
+        intro_title_main: "Klassisk elegance.",
+        intro_title_emphasis: "Moderne vildskab.",
+        intro_text: "{aboutContent.intro_text || 'Siden 2009 har vi udforsket grænserne for, hvad et strygerensemble kan være. Vi spiller ikke bare noderne; vi skaber fortællinger i spændingsfeltet mellem det akustiske og det elektriske.'}"
+      };
+
+      const DEFAULT_PLUS_CONTENT = {
+        header_title: "WKB+",
+        header_subtitle: "Udvalgte Samarbejder",
+        sections: [
+          {
+            id: 'mariam',
+            label: "Who Killed Bambi +",
+            title: "Mariam Wallentin",
+            image_url: "https://static.wixstatic.com/media/d3f0ae_e4acfcc0442e47ccbd5595014470fabe~mv2.jpg/v1/fill/w_442,h_331,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Mariam%20Wallentin%20%26%20Who%20Killed%20Bambi_03%20(giesenbauer).jpg",
+            image_credit: "Foto: Bjørn Giesenbauer",
+            quote: "\"I Mariam the Believer-sangen \"Invisible Giving\" har jeg svært ved at holde benene i ro, selvom der ingen slagtøj er på scenen. De fem strygere groover simpelthen for vildt, og de to celloer lyder næsten som en kontrabas. (...) Med en stemme, sange og strenge kan man nå meget langt, når råvarerne og behandlingen af dem er på så tårnhøjt niveau som her.\"",
+            quote_author: "Ole Rosenstadt Svidt, Gaffa",
+            rating: 5,
+            layout: 'image-left'
+          },
+          {
+            id: 'lucky',
+            label: "Who Killed Bambi +",
+            title: "Lucky Lo",
+            video_url: "https://video.wixstatic.com/video/d3f0ae_b2e0dca052e34c59bc66b2b14aac99c0/360p/mp4/file.mp4",
+            quote: "\"Foreningen af sangeren og strygerne var lige præcis så magisk, som man turde håbe på. Lyden var flydende, drømmende, legende og med et utroligt nærvær fra scenen. Selv de små musikalske finurligheder blev oversat af strygerne og forenede på fineste vis lyden af Lucky Lo med lyden af Who Killed Bambi. Publikum kvitterede med et stående bifald.\"",
+            quote_author: "Siff Haar-Lund, Gaffa",
+            rating: 5,
+            layout: 'video-right'
+          }
+        ],
+        info_title: "Hvad er Who Killed Bambi+?",
+        info_paragraphs: [
+          "Who Killed Bambi+ eller ganske kort WKB+ er en række af unikke koncerter, hvor alle elementer udføres af sangstemmer og strygere - nyfortolkninger udført af os i samspil med artisten selv. Vores husarrangør og bratschist Mette Dahl Kristensen skræddersyer sangskriverens katalog til vores besætning og vi bearbejder lyd og groove med ambitiøs nysgerrighed, indtil nummeret rammer os og publikum med styrke og autenticitet.",
+          "WKB+ har budt på samarbejder med en lang række interessante nordiske artister og anmelderroste optrædener på koncertsteder som Kulturmødet på Mors, Musikhuset Aarhus og Ofelia Plads (Det Kongelige Teater).",
+          "Vores diskografi inkluderer debutalbummet '+' (2015) med kunstnere som Pernille Rosendahl og Ane Brun, det selvbetitlede 'Who Killed Bambi' (2019) med strygerkompositioner af Mette Dahl Kristensen, og '12' (2021) med nordiske kunstnere som Sandra Kolstad, Eivør og Lydmor."
+        ],
+        info_note: "I december 2022 afholdte vi en enestående live koncertopførsel af albummet '12\" med alle albummets 12 solister, tre pigekor og lyskunst i Store Sal i Musikhuset Aarhus støttet af Kirsten og Gunnar Fonden."
+      };
+
+      const DEFAULT_FOOTER_CONTENT = {
+        social_links: [
+          { label: 'Instagram', url: '#' },
+          { label: 'Facebook', url: '#' },
+          { label: 'YouTube', url: '#' }
+        ],
+        copyright: "© 2025 WhoKilledBambi",
+        credit: "Web by Skouboe"
+      };
 
       // --- COMPONENTS ---
 
@@ -302,40 +351,34 @@
         );
       };
 
-      const Footer = () => (
-        <footer className="bg-[#E8E4DD] pt-24 pb-12 px-6 border-t border-wkbInk/5">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-24">
-            <div className="col-span-2">
-              <h2 className="font-serif text-5xl md:text-7xl text-wkbInk mb-8 tracking-tight blend-ink">WhoKilledBambi</h2>
-              <p className="text-wkbInk/60 max-w-md font-serif text-xl italic">
-                Vi skaber musikalske møder, der nedbryder grænserne mellem genrer.
-              </p>
-            </div>
+      const Footer = ({ footerContent }) => (
+        <footer className="pt-32 pb-16 px-6 md:px-12 border-t border-wkbInk/10">
+          <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 mb-16">
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-wkbInk mb-6">Kontakt</h4>
-              <ul className="space-y-4 text-sm text-wkbInk/70">
-                <li><a href="#" className="hover:text-wkbCoral transition-colors">Booking & Presse</a></li>
-                <li><a href="#" className="hover:text-wkbCoral transition-colors">Generelle henvendelser</a></li>
-                <li><a href="#" className="hover:text-wkbCoral transition-colors">Nyhedsbrev</a></li>
-              </ul>
+               <h4 className="text-xs font-bold uppercase tracking-widest text-wkbInk mb-6">Who Killed Bambi</h4>
+               <ul className="space-y-2 text-sm text-wkbInk/60">
+                 <li>Det Danske Strygerensemble</li>
+                 <li>Kontakt: booking@whokilledbambi.dk</li>
+                 <li>CVR: 12345678</li>
+               </ul>
             </div>
             <div>
                <h4 className="text-xs font-bold uppercase tracking-widest text-wkbInk mb-6">Følg Med</h4>
                <div className="flex gap-4">
-                 <a href="#" className="text-wkbInk/40 hover:text-wkbInk transition-colors">Instagram</a>
-                 <a href="#" className="text-wkbInk/40 hover:text-wkbInk transition-colors">Facebook</a>
-                 <a href="#" className="text-wkbInk/40 hover:text-wkbInk transition-colors">YouTube</a>
+                 {(footerContent.social_links || []).map((link, idx) => (
+                   <a key={idx} href={link.url || '#'} className="text-wkbInk/40 hover:text-wkbInk transition-colors">{link.label}</a>
+                 ))}
                </div>
             </div>
           </div>
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-end border-t border-wkbInk/10 pt-8 text-[10px] uppercase tracking-widest text-wkbInk/30">
-            <span>© 2025 WhoKilledBambi</span>
-            <span>Web by Skouboe</span>
+            <span>{footerContent.copyright || '© 2025 WhoKilledBambi'}</span>
+            <span>{footerContent.credit || 'Web by Skouboe'}</span>
           </div>
         </footer>
       );
 
-      const HomeSection = ({ setView }) => {
+            const HomeSection = ({ setView, homeContent, collaborators }) => {
         return (
           <div className="min-h-screen flex flex-col relative overflow-hidden">
             {/* TRADEMARK CIRCLE BACKGROUND - RESTORED AS REQUESTED */}
@@ -351,17 +394,27 @@
                </div>
 
                <div className="mb-8 fade-in-up">
-                 <span className="text-[10px] tracking-[0.4em] uppercase text-wkbInk/50 font-bold">Det Danske Strygerensemble</span>
+                 <span className="text-[10px] tracking-[0.4em] uppercase text-wkbInk/50 font-bold">{homeContent.tagline || 'Det Danske Strygerensemble'}</span>
                </div>
 
                {/* HUGE EDITORIAL HEADER */}
                <h1 className="text-[14vw] leading-[0.8] font-serif text-wkbInk blend-ink text-editorial mb-12 fade-in-up" style={{animationDelay: '0.1s'}}>
-                 WHO<br/>KILLED<br/><span className="text-wkbCoral">BAMBI</span>
+                 {(homeContent.title_lines || ['WHO', 'KILLED', 'BAMBI']).map((line, idx) => {
+                   const highlightIndex = homeContent.highlight_index ?? 2;
+                   const isHighlight = idx === highlightIndex;
+                   const highlightClass = homeContent.highlight_class || 'text-wkbCoral';
+                   return (
+                     <React.Fragment key={idx}>
+                       {isHighlight ? <span className={highlightClass}>{line}</span> : line}
+                       {idx < (homeContent.title_lines || []).length - 1 && <br/>}
+                     </React.Fragment>
+                   );
+                 })}
                </h1>
                
                <div className="fade-in-up" style={{animationDelay: '0.3s'}}>
                  <button onClick={() => setView('calendar')} className="group px-8 py-3 border border-wkbInk/20 rounded-full hover:border-wkbInk transition-all duration-500 flex items-center gap-3 bg-wkbPaper/50 backdrop-blur-sm">
-                   <span className="text-xs uppercase tracking-widest group-hover:mr-2 transition-all">Oplev Koncerter</span>
+                   <span className="text-xs uppercase tracking-widest group-hover:mr-2 transition-all">{homeContent.cta_label || 'Oplev Koncerter'}</span>
                    <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
                  </button>
                </div>
@@ -370,7 +423,7 @@
             {/* INFINITE MARQUEE */}
             <div className="w-full bg-wkbInk text-wkbPaper py-4 overflow-hidden whitespace-nowrap relative z-20">
               <div className="inline-flex animate-marquee">
-                {[...COLLABORATORS, ...COLLABORATORS].map((name, i) => (
+                {[...(collaborators || []), ...(collaborators || [])].map((name, i) => (
                   <span key={i} className="mx-8 text-sm uppercase tracking-widest font-bold opacity-80">{name} + </span>
                 ))}
               </div>
@@ -385,19 +438,22 @@
         const [error, setError] = useState(null);
 
         useEffect(() => {
-          const query = `*[_type == "news"] | order(publishedAt desc) {
-            title,
-            publishedAt,
-            body,
-            "imageUrl": mainImage.asset->url
-          }`;
-          
-          fetchSanity(query)
-            .then(data => {
-              setNews(data);
+          supabaseClient
+            .from('news')
+            .select('title,published_at,body,image_url')
+            .order('published_at', { ascending: false })
+            .then(({ data, error }) => {
+              if (error) throw error;
+              const mapped = (data || []).map((item) => ({
+                title: item.title,
+                publishedAt: item.published_at,
+                body: item.body,
+                imageUrl: item.image_url
+              }));
+              setNews(mapped);
               setLoading(false);
             })
-            .catch(err => {
+            .catch(() => {
               setError(true);
               setLoading(false);
             });
@@ -452,14 +508,14 @@
              {error && (
                 <div className="text-center py-20">
                   <p className="font-serif text-2xl italic text-wkbInk/50">Kunne ikke forbinde til databasen.</p>
-                  <p className="text-xs mt-2 text-wkbInk/30">Tjek at du har sat CORS op i Sanity Dashboard.</p>
+                  <p className="text-xs mt-2 text-wkbInk/30">Tjek at Supabase er sat op korrekt.</p>
                 </div>
              )}
 
              {!loading && !error && news.length === 0 && (
                <div className="text-center py-20">
                  <p className="font-serif text-2xl italic text-wkbInk/50">Der er ingen nyheder endnu.</p>
-                 <p className="text-xs uppercase tracking-widest text-wkbInk/30 mt-4">Gå til /admin.html for at oprette</p>
+                 <p className="text-xs uppercase tracking-widest text-wkbInk/30 mt-4">Gå til /admin/admin.html for at oprette</p>
                </div>
              )}
 
@@ -499,14 +555,14 @@
         );
       };
 
-      const AboutSection = () => (
+      const AboutSection = ({ aboutContent, members }) => (
         <div className="min-h-screen pt-32 px-6 md:px-12 max-w-[1400px] mx-auto fade-in-up">
            {/* INTRO TEXT - HUGE */}
            <div className="grid md:grid-cols-12 gap-12 mb-40 border-b border-wkbInk/10 pb-20">
              <div className="md:col-span-8">
                <h2 className="text-5xl md:text-7xl lg:text-8xl font-serif text-wkbInk leading-[0.9] blend-ink text-editorial mb-8">
-                 Klassisk elegance.<br/>
-                 <span className="text-wkbSage italic">Moderne vildskab.</span>
+                 {aboutContent.intro_title_main || 'Klassisk elegance.'}<br/>
+                 <span className="text-wkbSage italic">{aboutContent.intro_title_emphasis || 'Moderne vildskab.'}</span>
                </h2>
              </div>
              <div className="md:col-span-4 flex flex-col justify-end pb-4">
@@ -522,7 +578,7 @@
                <h3 className="text-sm font-bold uppercase tracking-widest text-wkbInk/40">Musikerne</h3>
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-12">
-               {MEMBERS_DATA.map((member, idx) => (
+               {(members || []).map((member, idx) => (
                  <div key={idx} className="group cursor-none">
                    <div className="aspect-[3/4] overflow-hidden mb-4 relative bg-[#E0DCD5]">
                      <img 
@@ -541,10 +597,10 @@
         </div>
       );
       
-      const PlusSection = () => {
+      const PlusSection = ({ plusContent }) => {
         const videoRef = useRef(null);
         const [isMuted, setIsMuted] = useState(true);
-        
+
         const toggleMute = () => {
            if (videoRef.current) {
              videoRef.current.muted = !videoRef.current.muted;
@@ -552,91 +608,97 @@
            }
         };
 
+        const sections = plusContent.sections || [];
+
         return (
           <div className="min-h-screen pt-32 px-6 md:px-12 max-w-6xl mx-auto fade-in-up pb-24">
              <header className="mb-24 text-center">
                 <h2 className="text-6xl md:text-9xl font-serif text-wkbInk blend-ink mb-4">
-                  WKB<span className="text-wkbCoral">+</span>
+                  {plusContent.header_title || 'WKB+'}
                 </h2>
-                <p className="text-sm uppercase tracking-widest text-wkbInk/50">Udvalgte Samarbejder</p>
+                <p className="text-sm uppercase tracking-widest text-wkbInk/50">{plusContent.header_subtitle || 'Udvalgte Samarbejder'}</p>
              </header>
-             
-             {/* MARIAM */}
-             <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center mb-32">
-                <div className="order-2 md:order-1">
-                   <div className="relative overflow-hidden rounded-sm aspect-[4/3]">
-                      <img 
-                        src="https://static.wixstatic.com/media/d3f0ae_e4acfcc0442e47ccbd5595014470fabe~mv2.jpg/v1/fill/w_442,h_331,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Mariam%20Wallentin%20%26%20Who%20Killed%20Bambi_03%20(giesenbauer).jpg" 
-                        alt="Mariam Wallentin & WKB" 
-                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
-                      />
-                      <div className="absolute bottom-2 left-4 text-[10px] text-white/70 uppercase tracking-wider">Foto: Bjørn Giesenbauer</div>
-                   </div>
-                </div>
-                <div className="order-1 md:order-2">
-                   <div className="mb-2 text-xs font-bold uppercase tracking-widest text-wkbCoral">Who Killed Bambi +</div>
-                   <h3 className="text-4xl md:text-5xl font-serif italic text-wkbInk mb-8">Mariam Wallentin</h3>
-                   <blockquote className="text-lg md:text-xl font-serif text-wkbInk/80 leading-relaxed mb-8 border-l-2 border-wkbSage/30 pl-6">
-                     "I Mariam the Believer-sangen "Invisible Giving" har jeg svært ved at holde benene i ro, selvom der ingen slagtøj er på scenen. De fem strygere groover simpelthen for vildt, og de to celloer lyder næsten som en kontrabas. 
-                     (...) Med en stemme, sange og strenge kan man nå meget langt, når råvarerne og behandlingen af dem er på så tårnhøjt niveau som her."
-                   </blockquote>
-                   <div className="flex items-center gap-4">
-                      <div className="text-xs font-bold uppercase tracking-widest text-wkbInk">Ole Rosenstadt Svidt, Gaffa</div>
-                      <div className="text-wkbCoral tracking-widest text-lg">★★★★★</div>
-                   </div>
-                </div>
-             </div>
 
-             {/* LUCKY LO */}
-             <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center mb-40 border-t border-wkbInk/10 pt-20">
-                <div className="order-1">
-                   <div className="mb-2 text-xs font-bold uppercase tracking-widest text-wkbCoral">Who Killed Bambi +</div>
-                   <h3 className="text-4xl md:text-5xl font-serif italic text-wkbInk mb-8">Lucky Lo</h3>
+             {sections.map((section, idx) => {
+               const isImageLeft = section.layout === 'image-left';
+               const isVideo = !!section.video_url;
+               const mediaBlock = (
+                 <div className="order-2 group relative rounded-sm overflow-hidden shadow-2xl">
+                   {isVideo ? (
+                     <>
+                       <video
+                         ref={videoRef}
+                         src={section.video_url}
+                         autoPlay
+                         loop
+                         muted
+                         playsInline
+                         className="w-full aspect-video object-cover"
+                       />
+                       <button
+                          onClick={toggleMute}
+                          className="absolute bottom-4 right-4 w-10 h-10 bg-wkbPaper/80 backdrop-blur-md rounded-full flex items-center justify-center text-wkbInk hover:text-wkbCoral transition-colors"
+                       >
+                          {isMuted ? <SpeakerOff size={16} /> : <Speaker size={16} />}
+                       </button>
+                     </>
+                   ) : (
+                     <div className="relative overflow-hidden rounded-sm aspect-[4/3]">
+                        <img
+                          src={section.image_url}
+                          alt={section.title}
+                          className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
+                        />
+                        {section.image_credit && (
+                          <div className="absolute bottom-2 left-4 text-[10px] text-white/70 uppercase tracking-wider">{section.image_credit}</div>
+                        )}
+                     </div>
+                   )}
+                 </div>
+               );
+
+               const textBlock = (
+                 <div className="order-1">
+                   <div className="mb-2 text-xs font-bold uppercase tracking-widest text-wkbCoral">{section.label || 'Who Killed Bambi +'}</div>
+                   <h3 className="text-4xl md:text-5xl font-serif italic text-wkbInk mb-8">{section.title}</h3>
                    <blockquote className="text-lg md:text-xl font-serif text-wkbInk/80 leading-relaxed mb-8 border-l-2 border-wkbSage/30 pl-6">
-                     "Foreningen af sangeren og strygerne var lige præcis så magisk, som man turde håbe på.
-                     Lyden var flydende, drømmende, legende og med et utroligt nærvær fra scenen. Selv de små musikalske finurligheder blev oversat af strygerne og forenede på fineste vis lyden af Lucky Lo med lyden af Who Killed Bambi.
-                     Publikum kvitterede med et stående bifald."
+                     {section.quote}
                    </blockquote>
                    <div className="flex items-center gap-4">
-                      <div className="text-xs font-bold uppercase tracking-widest text-wkbInk">Siff Haar-Lund, Gaffa</div>
-                      <div className="text-wkbCoral tracking-widest text-lg">★★★★★</div>
+                      <div className="text-xs font-bold uppercase tracking-widest text-wkbInk">{section.quote_author}</div>
+                      {section.rating && (
+                        <div className="text-wkbCoral tracking-widest text-lg">{'★'.repeat(section.rating)}</div>
+                      )}
                    </div>
-                </div>
-                <div className="order-2 group relative rounded-sm overflow-hidden shadow-2xl">
-                   <video 
-                     ref={videoRef}
-                     src="https://video.wixstatic.com/video/d3f0ae_b2e0dca052e34c59bc66b2b14aac99c0/360p/mp4/file.mp4" 
-                     autoPlay 
-                     loop 
-                     muted 
-                     playsInline 
-                     className="w-full aspect-video object-cover"
-                   />
-                   <button 
-                      onClick={toggleMute}
-                      className="absolute bottom-4 right-4 w-10 h-10 bg-wkbPaper/80 backdrop-blur-md rounded-full flex items-center justify-center text-wkbInk hover:text-wkbCoral transition-colors"
-                   >
-                      {isMuted ? <SpeakerOff size={16} /> : <Speaker size={16} />}
-                   </button>
-                </div>
-             </div>
-             
-             {/* INFO TEXT */}
+                 </div>
+               );
+
+               return (
+                 <div key={section.id || idx} className={`grid md:grid-cols-2 gap-12 lg:gap-20 items-center mb-32 ${idx > 0 ? 'border-t border-wkbInk/10 pt-20' : ''}`}>
+                   {isImageLeft ? (
+                     <>
+                       <div className="order-2 md:order-1">{mediaBlock}</div>
+                       <div className="order-1 md:order-2">{textBlock}</div>
+                     </>
+                   ) : (
+                     <>
+                       <div className="order-1">{textBlock}</div>
+                       <div className="order-2">{mediaBlock}</div>
+                     </>
+                   )}
+                 </div>
+               );
+             })}
+
              <div className="max-w-3xl mx-auto bg-white/40 backdrop-blur-sm p-8 md:p-12 rounded-sm border border-wkbInk/5">
-                <h3 className="text-3xl font-serif text-wkbInk mb-6">Hvad er Who Killed Bambi+?</h3>
+                <h3 className="text-3xl font-serif text-wkbInk mb-6">{plusContent.info_title || 'Hvad er Who Killed Bambi+?'}</h3>
                 <div className="space-y-6 text-wkbInk/80 font-serif text-lg leading-relaxed">
-                  <p>
-                    <span className="font-bold text-wkbInk">Who Killed Bambi+</span> eller ganske kort WKB+ er en række af unikke koncerter, hvor alle elementer udføres af sangstemmer og strygere - nyfortolkninger udført af os i samspil med artisten selv. Vores husarrangør og bratschist Mette Dahl Kristensen skræddersyer sangskriverens katalog til vores besætning og vi bearbejder lyd og groove med ambitiøs nysgerrighed, indtil nummeret rammer os og publikum med styrke og autenticitet.
-                  </p>
-                  <p>
-                    WKB+ har budt på samarbejder med en lang række interessante nordiske artister og anmelderroste optrædener på koncertsteder som Kulturmødet på Mors, Musikhuset Aarhus og Ofelia Plads (Det Kongelige Teater).
-                  </p>
-                  <p>
-                    Vores diskografi inkluderer debutalbummet '+' (2015) med kunstnere som Pernille Rosendahl og Ane Brun, det selvbetitlede 'Who Killed Bambi' (2019) med strygerkompositioner af Mette Dahl Kristensen, og '12' (2021) med nordiske kunstnere som Sandra Kolstad, Eivør og Lydmor.
-                  </p>
-                  <p className="italic text-sm text-wkbSage">
-                    I december 2022 afholdte vi en enestående live koncertopførsel af albummet '12" med alle albummets 12 solister, tre pigekor og lyskunst i Store Sal i Musikhuset Aarhus støttet af Kirsten og Gunnar Fonden.
-                  </p>
+                  {(plusContent.info_paragraphs || []).map((paragraph, i) => (
+                    <p key={i}>{paragraph}</p>
+                  ))}
+                  {plusContent.info_note && (
+                    <p className="italic text-sm text-wkbSage">{plusContent.info_note}</p>
+                  )}
                 </div>
              </div>
 
@@ -644,23 +706,26 @@
         );
       };
 
-      const CalendarSection = () => {
+            const CalendarSection = () => {
         const [events, setEvents] = useState([]);
         const [loading, setLoading] = useState(true);
 
         useEffect(() => {
-          const query = `*[_type == "event"] | order(date asc) {
-            title,
-            subtitle,
-            date,
-            location,
-            ticketLink,
-            theme
-          }`;
-          
-          fetchSanity(query)
-            .then(data => {
-              setEvents(data);
+          supabaseClient
+            .from('events')
+            .select('title,subtitle,event_date,location,ticket_link,theme')
+            .order('event_date', { ascending: true })
+            .then(({ data, error }) => {
+              if (error) throw error;
+              const mapped = (data || []).map((item) => ({
+                title: item.title,
+                subtitle: item.subtitle,
+                date: item.event_date,
+                location: item.location,
+                ticketLink: item.ticket_link,
+                theme: item.theme
+              }));
+              setEvents(mapped);
               setLoading(false);
             })
             .catch(err => {
@@ -729,7 +794,54 @@
       };
 
       const App = () => {
-        const [view, setView] = useState('intro'); 
+        const [view, setView] = useState('intro');
+        const [contentPages, setContentPages] = useState({});
+        const [members, setMembers] = useState(DEFAULT_MEMBERS_DATA);
+        const [collaborators, setCollaborators] = useState(DEFAULT_COLLABORATORS);
+
+        useEffect(() => {
+          let alive = true;
+          const loadContent = async () => {
+            try {
+              const [pagesRes, membersRes, collaboratorsRes] = await Promise.all([
+                supabaseClient.from('content_pages').select('slug,data'),
+                supabaseClient.from('members').select('name,instrument,image_url,sort_order').order('sort_order', { ascending: true }),
+                supabaseClient.from('collaborators').select('name,sort_order').order('sort_order', { ascending: true })
+              ]);
+
+              if (!alive) return;
+
+              const pageMap = {};
+              (pagesRes.data || []).forEach((page) => {
+                pageMap[page.slug] = page.data || {};
+              });
+              setContentPages(pageMap);
+
+              if (membersRes.data && membersRes.data.length) {
+                setMembers(membersRes.data.map((m) => ({
+                  name: m.name,
+                  instrument: m.instrument,
+                  imageUrl: m.image_url
+                })));
+              }
+
+              if (collaboratorsRes.data && collaboratorsRes.data.length) {
+                setCollaborators(collaboratorsRes.data.map((c) => c.name));
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          };
+
+          loadContent();
+          return () => { alive = false; };
+        }, []);
+
+        const homeContent = contentPages.home || DEFAULT_HOME_CONTENT;
+        const aboutContent = contentPages.about || DEFAULT_ABOUT_CONTENT;
+        const plusContent = contentPages.plus || DEFAULT_PLUS_CONTENT;
+        const footerContent = contentPages.footer || DEFAULT_FOOTER_CONTENT;
+
         return (
           <main className="relative w-full min-h-screen bg-wkbPaper">
             <div className="noise"></div>
@@ -741,12 +853,12 @@
               {view !== 'intro' && (
                 <>
                   <Navigation currentView={view} setView={setView} />
-                  {view === 'home' && <HomeSection setView={setView} />}
+                  {view === 'home' && <HomeSection setView={setView} homeContent={homeContent} collaborators={collaborators} />}
                   {view === 'news' && <NewsSection />}
-                  {view === 'about' && <AboutSection />}
-                  {view === 'plus' && <PlusSection />}
+                  {view === 'about' && <AboutSection aboutContent={aboutContent} members={members} />}
+                  {view === 'plus' && <PlusSection plusContent={plusContent} />}
                   {view === 'calendar' && <CalendarSection />}
-                  <Footer />
+                  <Footer footerContent={footerContent} />
                 </>
               )}
             </div>
@@ -754,7 +866,7 @@
         );
       };
 
-      const root = ReactDOM.createRoot(document.getElementById('root'));
+            const root = ReactDOM.createRoot(document.getElementById('root'));
       root.render(<App />);
     </script>
   </body>

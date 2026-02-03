@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StageReadyWeb CMS | Visual Builder</title>
-    <!-- Icons -->
+    <title>WhoKilledBambi CMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -14,7 +12,7 @@
             --bg-app: #050505;
             --bg-panel: #121212;
             --bg-panel-hover: #1e1e1e;
-            --accent: #d4ff00; /* Acid Green for "Pro" feel */
+            --accent: #d4ff00;
             --text-main: #ffffff;
             --text-muted: #888888;
             --border: #333333;
@@ -33,7 +31,9 @@
             overflow: hidden;
         }
 
-        /* --- LEFT SIDEBAR: Components --- */
+        .hidden { display: none; }
+
+        /* --- LEFT SIDEBAR --- */
         .sidebar-left {
             width: 280px;
             background-color: var(--bg-panel);
@@ -70,41 +70,35 @@
             font-weight: 600;
         }
 
-        .draggable-item {
+        .nav-item {
             background-color: var(--bg-panel-hover);
             border: 1px solid var(--border);
             padding: 12px 15px;
             border-radius: 8px;
             margin-bottom: 10px;
-            cursor: grab;
+            cursor: pointer;
             display: flex;
             align-items: center;
             gap: 12px;
             transition: all 0.2s ease;
         }
 
-        .draggable-item:hover {
+        .nav-item:hover {
             border-color: var(--text-muted);
             transform: translateX(5px);
         }
 
-        .draggable-item i { color: var(--text-muted); width: 20px; text-align: center; }
-        
-        /* Badge for Headliner features */
-        .badge-pro {
-            margin-left: auto;
-            background: var(--accent);
-            color: black;
-            font-size: 0.6rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 700;
+        .nav-item.active {
+            border-color: var(--accent);
+            background: #1c1c1c;
         }
 
+        .nav-item i { color: var(--text-muted); width: 20px; text-align: center; }
+        
         /* --- CENTER: Canvas --- */
         .canvas-area {
             flex: 1;
-            background-color: #000; /* Pure black for focus */
+            background-color: #000;
             overflow-y: auto;
             padding: 40px;
             display: flex;
@@ -112,89 +106,113 @@
             position: relative;
         }
 
-        /* The Website Page Container */
         .page-container {
             width: 100%;
             max-width: 1200px;
-            background-color: white; /* White website bg */
+            background-color: white;
             min-height: 1000px;
             color: black;
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
             position: relative;
+            padding: 32px;
         }
 
-        /* Drop Zones */
-        .drop-zone {
-            min-height: 100px;
-            border: 2px dashed transparent;
-            transition: 0.2s;
-            position: relative;
-        }
-        .drop-zone:hover { border-color: var(--accent); }
-
-        /* The Blocks (User Content) */
-        .block-wrapper {
-            position: relative;
-            border: 2px solid transparent;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        
-        .block-wrapper:hover {
-            border: 2px solid var(--accent);
-            z-index: 2;
+        .list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
         }
 
-        .block-controls {
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent);
-            color: black;
-            font-size: 0.7rem;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 600;
-            opacity: 0;
-            pointer-events: none;
-            transition: 0.2s;
-            white-space: nowrap;
+        .list-meta {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+        }
+
+        .toolbar {
             display: flex;
             gap: 10px;
         }
 
-        .block-wrapper:hover .block-controls {
-            opacity: 1;
-            top: -35px;
-            pointer-events: all;
-        }
-
-        /* Content Styling Mockups */
-        .mock-hero {
-            height: 600px;
-            background: #222;
+        .btn {
+            background: black;
             color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-image: url('https://picsum.photos/seed/bandhero/1200/600');
-            background-size: cover;
-            background-position: center;
-            position: relative;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
         }
-        .mock-hero::after { content:''; position: absolute; inset: 0; background: rgba(0,0,0,0.4); }
-        .mock-hero h1 { position: relative; z-index: 2; font-size: 4rem; text-transform: uppercase; text-align: center; }
 
-        .mock-tour-list { padding: 40px; background: #fff; }
-        .tour-row { display: flex; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid #eee; }
-        
-        .mock-release-grid { padding: 40px; background: #f4f4f4; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .album-cover { background: #333; aspect-ratio: 1; width: 100%; }
+        .btn:hover { opacity: 0.9; }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #333;
+            color: #333;
+        }
+
+        .btn-danger {
+            background: #b42318;
+        }
+
+        .list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .list-item {
+            border: 1px solid #eee;
+            padding: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.2s ease;
+        }
+
+        .list-item:hover {
+            border-color: #ccc;
+            transform: translateX(2px);
+        }
+
+        .list-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .list-subtitle {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .pill {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: #f3f3f3;
+            padding: 4px 8px;
+            border-radius: 999px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #888;
+            padding: 60px 20px;
+            border: 1px dashed #ddd;
+            border-radius: 12px;
+        }
 
         /* --- RIGHT SIDEBAR: Inspector --- */
         .sidebar-right {
-            width: 320px;
+            width: 360px;
             background-color: var(--bg-panel);
             border-left: 1px solid var(--border);
             display: flex;
@@ -209,6 +227,26 @@
             color: var(--text-muted);
             display: flex;
             justify-content: space-between;
+            align-items: center;
+        }
+
+        .inspector-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 6px;
+            padding: 6px 8px;
+            cursor: pointer;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         .inspector-content {
@@ -217,10 +255,10 @@
             flex: 1;
         }
 
-        .form-group { margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
         .form-group label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px; }
         
-        .form-input, .form-select {
+        .form-input, .form-select, .form-textarea {
             width: 100%;
             background: var(--bg-app);
             border: 1px solid var(--border);
@@ -229,7 +267,8 @@
             border-radius: 6px;
             font-family: inherit;
         }
-        .form-input:focus { border-color: var(--accent); }
+        .form-textarea { min-height: 140px; resize: vertical; }
+        .form-input:focus, .form-textarea:focus { border-color: var(--accent); }
 
         .btn-action {
             width: 100%;
@@ -240,200 +279,704 @@
             border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
-            margin-top: 20px;
+            margin-top: 10px;
         }
         .btn-action:hover { background: #eee; }
 
+        .status {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        /* Login overlay */
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 20px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 24px;
+            border-radius: 12px;
+        }
+
+        .login-card h1 {
+            font-size: 1.4rem;
+            margin-bottom: 12px;
+        }
+
+        .login-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 16px 0;
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
-            .sidebar-left, .sidebar-right { display: none; } /* Simplified for mobile mock */
+            .sidebar-left, .sidebar-right { display: none; }
+            .page-container { padding: 16px; }
         }
     </style>
 </head>
 <body>
-
-    <!-- VENSTRE: Moduler -->
-    <nav class="sidebar-left">
-        <div class="brand">
-            <i class="fa-solid fa-bolt"></i> ARTIST<span>CMS</span>
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card">
+            <h1>WKB Admin</h1>
+            <p>Log ind med brugernavn og adgangskode. Første gang kan du oprette <strong>admin/admin</strong>.</p>
+            <div class="form-group">
+                <label>Brugernavn</label>
+                <input id="login-username" class="form-input" type="text" placeholder="admin">
+            </div>
+            <div class="form-group">
+                <label>Adgangskode</label>
+                <input id="login-password" class="form-input" type="password" placeholder="••••••••">
+            </div>
+            <button id="login-btn" class="btn-action">Log ind</button>
+            <div class="divider"></div>
+            <div class="form-group">
+                <label>Opret ny admin</label>
+                <input id="signup-username" class="form-input" type="text" placeholder="nyadmin">
+            </div>
+            <div class="form-group">
+                <label>Adgangskode</label>
+                <input id="signup-password" class="form-input" type="password" placeholder="••••••••">
+            </div>
+            <button id="signup-btn" class="btn-action" style="background: transparent; border: 1px solid #333; color: #bbb;">Opret admin</button>
+            <p id="login-status" class="status" style="margin-top: 12px;"></p>
         </div>
-        
-        <div class="components-list">
-            <div class="category-title">Layout (Pulse)</div>
-            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="hero">
-                <i class="fa-solid fa-panorama"></i> Hero Section
-            </div>
-            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="text">
-                <i class="fa-solid fa-align-left"></i> Tekstblok
-            </div>
-            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="image">
-                <i class="fa-regular fa-image"></i> Billede/Galleri
-            </div>
+    </div>
 
-            <div class="category-title" style="margin-top: 30px;">Indhold (Pulse)</div>
-            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="tour">
-                <i class="fa-solid fa-calendar-days"></i> Tour / Kalender
+    <div id="app" class="hidden">
+        <nav class="sidebar-left">
+            <div class="brand">
+                <i class="fa-solid fa-bolt"></i> WKB<span>CMS</span>
             </div>
-            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="music">
-                <i class="fa-solid fa-music"></i> Releases / Spotify
-            </div>
-            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="merch">
-                <i class="fa-solid fa-shirt"></i> Merch Shop
-            </div>
-
-            <div class="category-title" style="margin-top: 30px;">Avanceret (Headliner)</div>
-            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="video-parallax">
-                <i class="fa-solid fa-film"></i> Video Parallax <span class="badge-pro">PRO</span>
-            </div>
-            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="campaign-hub">
-                <i class="fa-solid fa-bullhorn"></i> Campaign Hub <span class="badge-pro">PRO</span>
-            </div>
-            <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-type="motion-text">
-                <i class="fa-solid fa-bezier-curve"></i> Motion Text <span class="badge-pro">PRO</span>
-            </div>
-        </div>
-    </nav>
-
-    <!-- MIDTEN: Canvas (Byggeren) -->
-    <main class="canvas-area" ondrop="drop(event)" ondragover="allowDrop(event)">
-        <div class="page-container" id="page-content">
-            
-            <!-- Existing Content Mockup -->
-            <div class="block-wrapper" id="hero-1" onclick="selectBlock('Hero Section')">
-                <div class="block-controls">
-                    <span>Rediger Hero</span>
+            <div class="components-list">
+                <div class="category-title">Indhold</div>
+                <div class="nav-item active" data-section="news">
+                    <i class="fa-regular fa-newspaper"></i> Nyheder
                 </div>
-                <div class="mock-hero">
-                    <h1>THE BAND NAME</h1>
+                <div class="nav-item" data-section="events">
+                    <i class="fa-solid fa-calendar-days"></i> Koncerter
+                </div>
+                <div class="nav-item" data-section="members">
+                    <i class="fa-solid fa-people-group"></i> Musikere
+                </div>
+                <div class="nav-item" data-section="collaborators">
+                    <i class="fa-solid fa-handshake"></i> Samarbejder
+                </div>
+                <div class="category-title" style="margin-top: 30px;">Sider</div>
+                <div class="nav-item" data-section="content">
+                    <i class="fa-solid fa-layer-group"></i> Side-indhold (JSON)
                 </div>
             </div>
+        </nav>
 
-            <div class="block-wrapper" id="tour-1" onclick="selectBlock('Tour List')">
-                <div class="block-controls">
-                    <span>Rediger Tour</span>
-                </div>
-                <div class="mock-tour-list">
-                    <div class="category-title" style="color:#333; margin-bottom:20px;">KOMMENDE KONCERTER</div>
-                    <div class="tour-row">
-                        <span><strong>15. Aug</strong> - Vega, København</span>
-                        <button style="background:black; color:white; border:none; padding:5px 15px; cursor:pointer;">Køb Billet</button>
+        <main class="canvas-area">
+            <div class="page-container">
+                <div class="list-header">
+                    <div>
+                        <div id="section-title" class="category-title">Nyheder</div>
+                        <div id="section-meta" class="list-meta">Håndtér indhold på forsiden</div>
                     </div>
-                    <div class="tour-row">
-                        <span><strong>22. Aug</strong> - Train, Aarhus</span>
-                        <button style="background:black; color:white; border:none; padding:5px 15px; cursor:pointer;">Køb Billet</button>
+                    <div class="toolbar">
+                        <button id="new-btn" class="btn">Ny</button>
+                        <button id="refresh-btn" class="btn btn-outline">Opdater</button>
                     </div>
                 </div>
+                <div id="list" class="list"></div>
             </div>
+        </main>
 
-            <!-- Empty Drop Zone for adding more -->
-            <div class="drop-zone" style="height: 200px; display: flex; align-items: center; justify-content: center; color: #ccc; border-style: dashed;">
-                <i class="fa-solid fa-plus"></i> &nbsp; Træk moduler hertil
-            </div>
-
-        </div>
-    </main>
-
-    <!-- HØJRE: Egenskaber (Inspector) -->
-    <aside class="sidebar-right">
-        <div class="inspector-header">
-            <span id="inspector-title">Ingenting valgt</span>
-            <i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="deselect()"></i>
-        </div>
-        
-        <div class="inspector-content" id="inspector-body" style="display:none;">
-            <div class="form-group">
-                <label>Overskrift</label>
-                <input type="text" class="form-input" value="THE BAND NAME">
-            </div>
-            
-            <div class="form-group">
-                <label>Baggrund</label>
-                <div style="display:flex; gap:10px;">
-                    <div style="width:50px; height:50px; background:#333; border-radius:4px; cursor:pointer; border:2px solid var(--accent);"></div>
-                    <div style="width:50px; height:50px; background:#555; border-radius:4px; cursor:pointer;"></div>
-                    <div style="width:50px; height:50px; background:#111; border-radius:4px; cursor:pointer;"></div>
+        <aside class="sidebar-right">
+            <div class="inspector-header">
+                <span id="inspector-title">Ingenting valgt</span>
+                <div class="inspector-actions">
+                    <button id="sign-out-btn" class="icon-btn" title="Log ud"><i class="fa-solid fa-right-from-bracket"></i></button>
                 </div>
             </div>
-
-            <div class="form-group">
-                <label>Animation (Headliner Feature)</label>
-                <select class="form-select">
-                    <option>Ingen</option>
-                    <option>Fade In</option>
-                    <option>Slide Up</option>
-                    <option>Parallax Scroll</option>
-                </select>
+            <div class="inspector-content" id="inspector-body" style="display:none;"></div>
+            <div id="empty-state" style="padding:40px; text-align:center; color:#555;">
+                <i class="fa-solid fa-arrow-pointer" style="font-size:2rem; margin-bottom:15px;"></i>
+                <p>Vælg eller opret et element for at redigere indhold.</p>
             </div>
+        </aside>
+    </div>
 
-            <button class="btn-action">Gem Ændringer</button>
-            <button class="btn-action" style="background:transparent; border:1px solid #333; color:#888; margin-top:10px;">Sektion Slet</button>
-        </div>
-
-        <div id="empty-state" style="padding:40px; text-align:center; color:#555;">
-            <i class="fa-solid fa-arrow-pointer" style="font-size:2rem; margin-bottom:15px;"></i>
-            <p>Klik på en sektion for at redigere indhold, billeder og links.</p>
-        </div>
-    </aside>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        function allowDrop(ev) {
-            ev.preventDefault();
-            // Visual cue could be added here
-        }
+        const SUPABASE_URL = 'https://rtblicylmsfhpeggqmlp.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_7b6MrtzuIoPBz0RiC9YDEg_v6khvC2y';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        function drag(ev) {
-            ev.dataTransfer.setData("type", ev.target.dataset.type);
-        }
+        const sectionMeta = {
+            news: 'Nyheder til forsiden',
+            events: 'Koncerter / kalender',
+            members: 'Musikere på Om-siden',
+            collaborators: 'Navne i marquee på forsiden',
+            content: 'Side-indhold som JSON (skalerbart)'
+        };
 
-        function drop(ev) {
-            ev.preventDefault();
-            var type = ev.dataTransfer.getData("type");
-            const container = document.getElementById('page-content');
-            
-            // Simuler at vi tilføjer en ny blok baseret på typen
-            const newBlock = document.createElement('div');
-            newBlock.className = 'block-wrapper';
-            newBlock.onclick = function() { selectBlock('Ny ' + type); };
-            
-            let contentHTML = '';
-            
-            if(type === 'tour') {
-                contentHTML = `
-                <div class="block-controls"><span>Rediger Tour</span></div>
-                <div class="mock-tour-list" style="background:#f9f9f9; padding:20px; text-align:center; color:#888;">
-                    <i class="fa-regular fa-calendar-plus" style="font-size:2rem;"></i><br>
-                    Ny Tour Liste (Klik for at redigere)
-                </div>`;
-            } else if (type === 'video-parallax') {
-                 contentHTML = `
-                <div class="block-controls"><span>Rediger Video (PRO)</span></div>
-                <div style="height:300px; background:#000; color:#555; display:flex; align-items:center; justify-content:center;">
-                    <i class="fa-solid fa-play-circle" style="font-size:3rem;"></i>
-                </div>`;
+        const state = {
+            section: 'news',
+            items: [],
+            selected: null
+        };
+
+        const loginOverlay = document.getElementById('login-overlay');
+        const appRoot = document.getElementById('app');
+        const listEl = document.getElementById('list');
+        const inspectorBody = document.getElementById('inspector-body');
+        const inspectorTitle = document.getElementById('inspector-title');
+        const emptyState = document.getElementById('empty-state');
+        const loginStatus = document.getElementById('login-status');
+
+        const setStatus = (message, isError = false) => {
+            loginStatus.textContent = message;
+            loginStatus.style.color = isError ? '#f97066' : '#999';
+        };
+
+        const toEmail = (username) => `${username.trim().toLowerCase()}@wkb.local`;
+
+        const showLogin = (show) => {
+            loginOverlay.classList.toggle('hidden', !show);
+            appRoot.classList.toggle('hidden', show);
+        };
+
+        const setActiveNav = (section) => {
+            document.querySelectorAll('.nav-item').forEach((item) => {
+                item.classList.toggle('active', item.dataset.section === section);
+            });
+        };
+
+        const setSection = async (section) => {
+            state.section = section;
+            state.selected = null;
+            inspectorBody.style.display = 'none';
+            emptyState.style.display = 'block';
+            inspectorTitle.textContent = 'Ingenting valgt';
+            document.getElementById('section-title').textContent = section === 'content' ? 'Side-indhold' : section.charAt(0).toUpperCase() + section.slice(1);
+            document.getElementById('section-meta').textContent = sectionMeta[section] || '';
+            setActiveNav(section);
+            await loadSection(section);
+            renderList();
+        };
+
+        const loadSection = async (section) => {
+            let query;
+            if (section === 'news') {
+                query = supabaseClient.from('news').select('*').order('published_at', { ascending: false });
+            } else if (section === 'events') {
+                query = supabaseClient.from('events').select('*').order('event_date', { ascending: true });
+            } else if (section === 'members') {
+                query = supabaseClient.from('members').select('*').order('sort_order', { ascending: true });
+            } else if (section === 'collaborators') {
+                query = supabaseClient.from('collaborators').select('*').order('sort_order', { ascending: true });
             } else {
-                contentHTML = `
-                <div class="block-controls"><span>Rediger Sektion</span></div>
-                <div style="padding:40px; background:#eee; text-align:center;">
-                    Ny ${type} Sektion
-                </div>`;
+                query = supabaseClient.from('content_pages').select('*').order('slug', { ascending: true });
             }
 
-            newBlock.innerHTML = contentHTML;
-            container.insertBefore(newBlock, container.lastElementChild);
-        }
+            const { data, error } = await query;
+            if (error) {
+                console.error(error);
+                state.items = [];
+                return;
+            }
+            state.items = data || [];
+        };
 
-        function selectBlock(title) {
-            document.getElementById('inspector-title').innerText = title;
-            document.getElementById('inspector-body').style.display = 'block';
-            document.getElementById('empty-state').style.display = 'none';
-        }
+        const renderList = () => {
+            if (!state.items.length) {
+                listEl.innerHTML = `<div class="empty-state">Ingen data endnu. Klik "Ny" for at oprette.</div>`;
+                return;
+            }
 
-        function deselect() {
-            document.getElementById('inspector-title').innerText = 'Ingenting valgt';
-            document.getElementById('inspector-body').style.display = 'none';
-            document.getElementById('empty-state').style.display = 'block';
-        }
+            listEl.innerHTML = state.items.map((item) => {
+                if (state.section === 'news') {
+                    return `
+                        <div class="list-item" data-id="${item.id}">
+                            <div>
+                                <div class="list-title">${item.title || 'Uden titel'}</div>
+                                <div class="list-subtitle">${item.published_at ? new Date(item.published_at).toLocaleDateString('da-DK') : ''}</div>
+                            </div>
+                            <span class="pill">Nyhed</span>
+                        </div>
+                    `;
+                }
+                if (state.section === 'events') {
+                    return `
+                        <div class="list-item" data-id="${item.id}">
+                            <div>
+                                <div class="list-title">${item.title || 'Uden titel'}</div>
+                                <div class="list-subtitle">${item.location || ''}</div>
+                            </div>
+                            <span class="pill">${item.event_date ? new Date(item.event_date).toLocaleDateString('da-DK') : ''}</span>
+                        </div>
+                    `;
+                }
+                if (state.section === 'members') {
+                    return `
+                        <div class="list-item" data-id="${item.id}">
+                            <div>
+                                <div class="list-title">${item.name || 'Uden navn'}</div>
+                                <div class="list-subtitle">${item.instrument || ''}</div>
+                            </div>
+                            <span class="pill">#${item.sort_order ?? 0}</span>
+                        </div>
+                    `;
+                }
+                if (state.section === 'collaborators') {
+                    return `
+                        <div class="list-item" data-id="${item.id}">
+                            <div>
+                                <div class="list-title">${item.name || 'Uden navn'}</div>
+                                <div class="list-subtitle">Marquee navn</div>
+                            </div>
+                            <span class="pill">#${item.sort_order ?? 0}</span>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="list-item" data-id="${item.id}">
+                        <div>
+                            <div class="list-title">${item.title || item.slug}</div>
+                            <div class="list-subtitle">/${item.slug}</div>
+                        </div>
+                        <span class="pill">JSON</span>
+                    </div>
+                `;
+            }).join('');
+
+            listEl.querySelectorAll('.list-item').forEach((el) => {
+                el.addEventListener('click', () => {
+                    const id = el.dataset.id;
+                    const item = state.items.find((entry) => entry.id === id);
+                    selectItem(item);
+                });
+            });
+        };
+
+        const selectItem = (item) => {
+            state.selected = item;
+            inspectorTitle.textContent = item?.title || item?.name || item?.slug || 'Rediger';
+            inspectorBody.style.display = 'block';
+            emptyState.style.display = 'none';
+            renderForm();
+        };
+
+        const newItem = () => {
+            state.selected = { _new: true };
+            inspectorTitle.textContent = 'Ny';
+            inspectorBody.style.display = 'block';
+            emptyState.style.display = 'none';
+            renderForm();
+        };
+
+        const formatDateInput = (value) => {
+            if (!value) return '';
+            const date = new Date(value);
+            const pad = (n) => `${n}`.padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        };
+
+        const parseDateInput = (value) => {
+            if (!value) return null;
+            const date = new Date(value);
+            return date.toISOString();
+        };
+
+        const uploadImage = async (file) => {
+            const fileExt = file.name.split('.').pop();
+            const filePath = `${crypto.randomUUID()}.${fileExt}`;
+            const { error } = await supabaseClient.storage.from('media').upload(filePath, file, { upsert: true });
+            if (error) throw error;
+            const { data } = supabaseClient.storage.from('media').getPublicUrl(filePath);
+            return { url: data.publicUrl, path: filePath };
+        };
+
+        const renderForm = () => {
+            const item = state.selected || {};
+            if (state.section === 'news') {
+                inspectorBody.innerHTML = `
+                    <div class="form-group">
+                        <label>Titel</label>
+                        <input id="field-title" class="form-input" type="text" value="${item.title || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Udgivelsesdato</label>
+                        <input id="field-date" class="form-input" type="datetime-local" value="${formatDateInput(item.published_at)}">
+                    </div>
+                    <div class="form-group">
+                        <label>Billede URL</label>
+                        <input id="field-image" class="form-input" type="text" value="${item.image_url || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Upload billede (Supabase Storage)</label>
+                        <input id="field-upload" class="form-input" type="file" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label>Tekst</label>
+                        <textarea id="field-body" class="form-textarea">${item.body || ''}</textarea>
+                    </div>
+                    <button class="btn-action" data-action="save">Gem ændringer</button>
+                    <button class="btn-action" data-action="delete" style="background: transparent; border: 1px solid #333; color: #888;">Slet nyhed</button>
+                `;
+            }
+
+            if (state.section === 'events') {
+                inspectorBody.innerHTML = `
+                    <div class="form-group">
+                        <label>Titel</label>
+                        <input id="field-title" class="form-input" type="text" value="${item.title || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Undertitel</label>
+                        <input id="field-subtitle" class="form-input" type="text" value="${item.subtitle || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Dato og tid</label>
+                        <input id="field-date" class="form-input" type="datetime-local" value="${formatDateInput(item.event_date)}">
+                    </div>
+                    <div class="form-group">
+                        <label>Sted</label>
+                        <input id="field-location" class="form-input" type="text" value="${item.location || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Billetlink</label>
+                        <input id="field-ticket" class="form-input" type="text" value="${item.ticket_link || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Farvetema (klasse)</label>
+                        <select id="field-theme" class="form-select">
+                            <option value="text-wkbInk" ${item.theme === 'text-wkbInk' ? 'selected' : ''}>Ink</option>
+                            <option value="text-wkbCoral" ${item.theme === 'text-wkbCoral' ? 'selected' : ''}>Coral</option>
+                            <option value="text-wkbSage" ${item.theme === 'text-wkbSage' ? 'selected' : ''}>Sage</option>
+                        </select>
+                    </div>
+                    <button class="btn-action" data-action="save">Gem ændringer</button>
+                    <button class="btn-action" data-action="delete" style="background: transparent; border: 1px solid #333; color: #888;">Slet koncert</button>
+                `;
+            }
+
+            if (state.section === 'members') {
+                inspectorBody.innerHTML = `
+                    <div class="form-group">
+                        <label>Navn</label>
+                        <input id="field-name" class="form-input" type="text" value="${item.name || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Instrument</label>
+                        <input id="field-instrument" class="form-input" type="text" value="${item.instrument || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Billede URL</label>
+                        <input id="field-image" class="form-input" type="text" value="${item.image_url || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Upload billede (Supabase Storage)</label>
+                        <input id="field-upload" class="form-input" type="file" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label>Sortering</label>
+                        <input id="field-order" class="form-input" type="number" value="${item.sort_order ?? 0}">
+                    </div>
+                    <button class="btn-action" data-action="save">Gem ændringer</button>
+                    <button class="btn-action" data-action="delete" style="background: transparent; border: 1px solid #333; color: #888;">Slet medlem</button>
+                `;
+            }
+
+            if (state.section === 'collaborators') {
+                inspectorBody.innerHTML = `
+                    <div class="form-group">
+                        <label>Navn</label>
+                        <input id="field-name" class="form-input" type="text" value="${item.name || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Sortering</label>
+                        <input id="field-order" class="form-input" type="number" value="${item.sort_order ?? 0}">
+                    </div>
+                    <button class="btn-action" data-action="save">Gem ændringer</button>
+                    <button class="btn-action" data-action="delete" style="background: transparent; border: 1px solid #333; color: #888;">Slet navn</button>
+                `;
+            }
+
+            if (state.section === 'content') {
+                inspectorBody.innerHTML = `
+                    <div class="form-group">
+                        <label>Slug</label>
+                        <input id="field-slug" class="form-input" type="text" value="${item.slug || ''}" ${item._new ? '' : 'disabled'}>
+                    </div>
+                    <div class="form-group">
+                        <label>Titel</label>
+                        <input id="field-title" class="form-input" type="text" value="${item.title || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>JSON</label>
+                        <textarea id="field-json" class="form-textarea">${item.data ? JSON.stringify(item.data, null, 2) : '{}'}</textarea>
+                    </div>
+                    <button class="btn-action" data-action="save">Gem ændringer</button>
+                    <button class="btn-action" data-action="delete" style="background: transparent; border: 1px solid #333; color: #888;">Slet side</button>
+                `;
+            }
+
+            attachFormActions();
+        };
+
+        const attachFormActions = () => {
+            const saveBtn = inspectorBody.querySelector('[data-action="save"]');
+            const deleteBtn = inspectorBody.querySelector('[data-action="delete"]');
+            if (saveBtn) saveBtn.addEventListener('click', saveItem);
+            if (deleteBtn) deleteBtn.addEventListener('click', deleteItem);
+        };
+
+        const saveItem = async () => {
+            const item = state.selected || {};
+            try {
+                if (state.section === 'news') {
+                    const title = document.getElementById('field-title').value.trim();
+                    const publishedAt = parseDateInput(document.getElementById('field-date').value);
+                    const body = document.getElementById('field-body').value;
+                    const imageUrlInput = document.getElementById('field-image').value.trim();
+                    const fileInput = document.getElementById('field-upload');
+
+                    let imageUrl = imageUrlInput;
+                    let imagePath = item.image_storage_path || null;
+
+                    if (fileInput.files && fileInput.files[0]) {
+                        const upload = await uploadImage(fileInput.files[0]);
+                        imageUrl = upload.url;
+                        imagePath = upload.path;
+                    }
+
+                    const payload = {
+                        title,
+                        published_at: publishedAt,
+                        body,
+                        image_url: imageUrl || null,
+                        image_storage_path: imagePath
+                    };
+
+                    if (item._new) {
+                        await supabaseClient.from('news').insert(payload);
+                    } else {
+                        await supabaseClient.from('news').update(payload).eq('id', item.id);
+                    }
+                }
+
+                if (state.section === 'events') {
+                    const payload = {
+                        title: document.getElementById('field-title').value.trim(),
+                        subtitle: document.getElementById('field-subtitle').value.trim(),
+                        event_date: parseDateInput(document.getElementById('field-date').value),
+                        location: document.getElementById('field-location').value.trim(),
+                        ticket_link: document.getElementById('field-ticket').value.trim(),
+                        theme: document.getElementById('field-theme').value
+                    };
+
+                    if (item._new) {
+                        await supabaseClient.from('events').insert(payload);
+                    } else {
+                        await supabaseClient.from('events').update(payload).eq('id', item.id);
+                    }
+                }
+
+                if (state.section === 'members') {
+                    const name = document.getElementById('field-name').value.trim();
+                    const instrument = document.getElementById('field-instrument').value.trim();
+                    const imageUrlInput = document.getElementById('field-image').value.trim();
+                    const fileInput = document.getElementById('field-upload');
+                    const sortOrder = parseInt(document.getElementById('field-order').value || '0', 10);
+
+                    let imageUrl = imageUrlInput;
+                    let imagePath = item.image_storage_path || null;
+
+                    if (fileInput.files && fileInput.files[0]) {
+                        const upload = await uploadImage(fileInput.files[0]);
+                        imageUrl = upload.url;
+                        imagePath = upload.path;
+                    }
+
+                    const payload = {
+                        name,
+                        instrument,
+                        image_url: imageUrl || null,
+                        image_storage_path: imagePath,
+                        sort_order: sortOrder
+                    };
+
+                    if (item._new) {
+                        await supabaseClient.from('members').insert(payload);
+                    } else {
+                        await supabaseClient.from('members').update(payload).eq('id', item.id);
+                    }
+                }
+
+                if (state.section === 'collaborators') {
+                    const payload = {
+                        name: document.getElementById('field-name').value.trim(),
+                        sort_order: parseInt(document.getElementById('field-order').value || '0', 10)
+                    };
+
+                    if (item._new) {
+                        await supabaseClient.from('collaborators').insert(payload);
+                    } else {
+                        await supabaseClient.from('collaborators').update(payload).eq('id', item.id);
+                    }
+                }
+
+                if (state.section === 'content') {
+                    const slug = document.getElementById('field-slug').value.trim();
+                    const title = document.getElementById('field-title').value.trim();
+                    const jsonText = document.getElementById('field-json').value.trim();
+                    let data;
+                    try {
+                        data = JSON.parse(jsonText || '{}');
+                    } catch (err) {
+                        alert('JSON er ikke gyldigt.');
+                        return;
+                    }
+
+                    const payload = { slug, title, data };
+
+                    if (item._new) {
+                        await supabaseClient.from('content_pages').insert(payload);
+                    } else {
+                        await supabaseClient.from('content_pages').update(payload).eq('id', item.id);
+                    }
+                }
+
+                await loadSection(state.section);
+                renderList();
+                state.selected = null;
+                inspectorBody.style.display = 'none';
+                emptyState.style.display = 'block';
+                inspectorTitle.textContent = 'Ingenting valgt';
+            } catch (err) {
+                console.error(err);
+                alert('Kunne ikke gemme. Tjek konsollen.');
+            }
+        };
+
+        const deleteItem = async () => {
+            const item = state.selected || {};
+            if (item._new || !item.id) {
+                state.selected = null;
+                inspectorBody.style.display = 'none';
+                emptyState.style.display = 'block';
+                inspectorTitle.textContent = 'Ingenting valgt';
+                return;
+            }
+
+            const confirmed = confirm('Er du sikker på at du vil slette?');
+            if (!confirmed) return;
+
+            try {
+                if (state.section === 'news') {
+                    await supabaseClient.from('news').delete().eq('id', item.id);
+                }
+                if (state.section === 'events') {
+                    await supabaseClient.from('events').delete().eq('id', item.id);
+                }
+                if (state.section === 'members') {
+                    await supabaseClient.from('members').delete().eq('id', item.id);
+                }
+                if (state.section === 'collaborators') {
+                    await supabaseClient.from('collaborators').delete().eq('id', item.id);
+                }
+                if (state.section === 'content') {
+                    await supabaseClient.from('content_pages').delete().eq('id', item.id);
+                }
+                await loadSection(state.section);
+                renderList();
+                state.selected = null;
+                inspectorBody.style.display = 'none';
+                emptyState.style.display = 'block';
+                inspectorTitle.textContent = 'Ingenting valgt';
+            } catch (err) {
+                console.error(err);
+                alert('Kunne ikke slette.');
+            }
+        };
+
+        document.getElementById('new-btn').addEventListener('click', newItem);
+        document.getElementById('refresh-btn').addEventListener('click', () => setSection(state.section));
+
+        document.querySelectorAll('.nav-item').forEach((item) => {
+            item.addEventListener('click', () => setSection(item.dataset.section));
+        });
+
+        document.getElementById('sign-out-btn').addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+            showLogin(true);
+        });
+
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            if (!username || !password) return setStatus('Udfyld brugernavn og adgangskode.', true);
+            setStatus('Logger ind...');
+            const { error } = await supabaseClient.auth.signInWithPassword({
+                email: toEmail(username),
+                password
+            });
+            if (error) return setStatus('Login fejlede. Tjek brugernavn og adgangskode.', true);
+            setStatus('');
+        });
+
+        document.getElementById('signup-btn').addEventListener('click', async () => {
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+            if (!username || !password) return setStatus('Udfyld brugernavn og adgangskode.', true);
+            setStatus('Opretter admin...');
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: toEmail(username),
+                password
+            });
+            if (error) return setStatus('Kunne ikke oprette admin. Tjek Supabase Auth-indstillinger.', true);
+
+            if (data?.user) {
+                const { error: profileError } = await supabaseClient.from('admin_profiles').insert({
+                    id: data.user.id,
+                    username
+                });
+                if (profileError) console.warn(profileError);
+            }
+
+            setStatus('Admin oprettet. Log ind med brugernavn og adgangskode.');
+        });
+
+        supabaseClient.auth.onAuthStateChange((_event, session) => {
+            if (session) {
+                showLogin(false);
+                setSection(state.section);
+            } else {
+                showLogin(true);
+            }
+        });
+
+        supabaseClient.auth.getSession().then(({ data }) => {
+            if (data.session) {
+                showLogin(false);
+                setSection(state.section);
+            } else {
+                showLogin(true);
+            }
+        });
     </script>
 </body>
-
 </html>
