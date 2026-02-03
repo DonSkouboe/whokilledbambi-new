@@ -50,6 +50,9 @@
             display: flex;
             flex-direction: column;
             z-index: 10;
+            height: 100vh;
+            position: sticky;
+            top: 0;
         }
 
         .brand {
@@ -67,7 +70,7 @@
         .components-list {
             padding: 20px;
             overflow-y: auto;
-            flex: 1;
+            flex: 1 1 auto;
         }
 
         .brand-footer {
@@ -392,6 +395,8 @@
                 width: 100%;
                 border-right: none;
                 border-bottom: 1px solid var(--border);
+                height: auto;
+                position: relative;
             }
 
             .components-list {
@@ -409,6 +414,11 @@
 
             .nav-item {
                 margin-bottom: 0;
+            }
+
+            .brand-footer {
+                border-top: 1px solid var(--border);
+                padding: 12px 16px 16px;
             }
 
             .canvas-area {
