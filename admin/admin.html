@@ -585,8 +585,7 @@
         };
 
         const focusList = () => {
-            if (!listPane) return;
-            listPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         const toEmail = (username) => `${username.trim().toLowerCase()}@wkb.example`;
