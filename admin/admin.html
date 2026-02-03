@@ -320,6 +320,26 @@
             margin-bottom: 16px;
         }
 
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            padding: 20px;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 24px;
+            border-radius: 12px;
+        }
+
         .divider {
             height: 1px;
             background: var(--border);
@@ -346,18 +366,7 @@
                 <label>Adgangskode</label>
                 <input id="login-password" class="form-input" type="password" placeholder="••••••••">
             </div>
-            <button id="login-btn" class="btn-action">Log ind</button>
-            <div class="divider"></div>
-            <div class="form-group">
-                <label>Opret ny admin</label>
-                <input id="signup-username" class="form-input" type="text" placeholder="nyadmin">
-            </div>
-            <div class="form-group">
-                <label>Adgangskode</label>
-                <input id="signup-password" class="form-input" type="password" placeholder="••••••••">
-            </div>
-            <button id="signup-btn" class="btn-action" style="background: transparent; border: 1px solid #333; color: #bbb;">Opret admin</button>
-            <p id="login-status" class="status" style="margin-top: 12px;"></p>
+            <button id="login-btn" class="btn-action">Log ind</button>            <p id="login-status" class="status" style="margin-top: 12px;"></p>
         </div>
     </div>
 
@@ -407,6 +416,7 @@
             <div class="inspector-header">
                 <span id="inspector-title">Ingenting valgt</span>
                 <div class="inspector-actions">
+                    <button id="new-admin-btn" class="icon-btn" title="Ny admin"><i class="fa-solid fa-user-plus"></i></button>
                     <button id="sign-out-btn" class="icon-btn" title="Log ud"><i class="fa-solid fa-right-from-bracket"></i></button>
                 </div>
             </div>
@@ -416,6 +426,24 @@
                 <p>Vælg eller opret et element for at redigere indhold.</p>
             </div>
         </aside>
+    </div>
+
+    <div id="admin-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h2 style="font-size:1.2rem; margin-bottom:12px;">Opret ny admin</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">Opret en ny admin-bruger med brugernavn og adgangskode.</p>
+            <div class="form-group">
+                <label>Brugernavn</label>
+                <input id="modal-username" class="form-input" type="text" placeholder="nyadmin">
+            </div>
+            <div class="form-group">
+                <label>Adgangskode</label>
+                <input id="modal-password" class="form-input" type="password" placeholder="••••••••">
+            </div>
+            <button id="modal-create" class="btn-action">Opret admin</button>
+            <button id="modal-cancel" class="btn-action" style="background: transparent; border: 1px solid #333; color: #bbb;">Annuller</button>
+            <p id="modal-status" class="status" style="margin-top: 12px;"></p>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -454,8 +482,15 @@
         const toEmail = (username) => `${username.trim().toLowerCase()}@wkb.example`;
 
         const showLogin = (show) => {
-            loginOverlay.classList.toggle('hidden', !show);
-            appRoot.classList.toggle('hidden', show);
+            if (show) {
+                loginOverlay.classList.remove('hidden');
+                loginOverlay.style.display = 'flex';
+                appRoot.classList.add('hidden');
+            } else {
+                loginOverlay.classList.add('hidden');
+                loginOverlay.style.display = 'none';
+                appRoot.classList.remove('hidden');
+            }
         };
 
         const setActiveNav = (section) => {
@@ -925,6 +960,57 @@
             showLogin(true);
         });
 
+        const adminModal = document.getElementById('admin-modal');
+        const modalStatus = document.getElementById('modal-status');
+
+        const openAdminModal = () => {
+            adminModal.style.display = 'flex';
+            modalStatus.textContent = '';
+        };
+
+        const closeAdminModal = () => {
+            adminModal.style.display = 'none';
+            document.getElementById('modal-username').value = '';
+            document.getElementById('modal-password').value = '';
+            modalStatus.textContent = '';
+        };
+
+        document.getElementById('new-admin-btn').addEventListener('click', openAdminModal);
+        document.getElementById('modal-cancel').addEventListener('click', closeAdminModal);
+
+        document.getElementById('modal-create').addEventListener('click', async () => {
+            const username = document.getElementById('modal-username').value;
+            const password = document.getElementById('modal-password').value;
+            if (!username || !password) {
+                modalStatus.textContent = 'Udfyld brugernavn og adgangskode.';
+                modalStatus.style.color = '#f97066';
+                return;
+            }
+            modalStatus.textContent = 'Opretter admin...';
+            modalStatus.style.color = '#999';
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: toEmail(username),
+                password
+            });
+            if (error) {
+                modalStatus.textContent = error.message || 'Kunne ikke oprette admin.';
+                modalStatus.style.color = '#f97066';
+                return;
+            }
+
+            if (data?.user) {
+                const { error: profileError } = await supabaseClient.from('admin_profiles').insert({
+                    id: data.user.id,
+                    username
+                });
+                if (profileError) console.warn(profileError);
+            }
+
+            modalStatus.textContent = 'Admin oprettet.';
+            modalStatus.style.color = '#9ae6b4';
+        });
+
+
         document.getElementById('login-btn').addEventListener('click', async () => {
             const username = document.getElementById('login-username').value;
             const password = document.getElementById('login-password').value;
@@ -938,28 +1024,6 @@
             setStatus('');
             showLogin(false);
             setSection(state.section);
-        });
-
-        document.getElementById('signup-btn').addEventListener('click', async () => {
-            const username = document.getElementById('signup-username').value;
-            const password = document.getElementById('signup-password').value;
-            if (!username || !password) return setStatus('Udfyld brugernavn og adgangskode.', true);
-            setStatus('Opretter admin...');
-            const { data, error } = await supabaseClient.auth.signUp({
-                email: toEmail(username),
-                password
-            });
-            if (error) return setStatus('Kunne ikke oprette admin. Tjek Supabase Auth-indstillinger.', true);
-
-            if (data?.user) {
-                const { error: profileError } = await supabaseClient.from('admin_profiles').insert({
-                    id: data.user.id,
-                    username
-                });
-                if (profileError) console.warn(profileError);
-            }
-
-            setStatus('Admin oprettet. Log ind med brugernavn og adgangskode.');
         });
 
         supabaseClient.auth.onAuthStateChange((_event, session) => {
