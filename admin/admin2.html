@@ -1397,6 +1397,9 @@
                             <label class="form-label">CTA tekst</label>
                             <input class="form-input" data-field="cta_label" type="text" value="${block.cta_label || ''}">
                             <div style="height:10px;"></div>
+                            <label class="form-label">CTA link (slug eller URL)</label>
+                            <input class="form-input" data-field="cta_url" type="text" value="${block.cta_url || ''}" placeholder="fx /calendar, about eller https://...">
+                            <div style="height:10px;"></div>
                             <label class="form-label">Baggrundstype</label>
                             <select class="form-select" data-field="background_type">
                                 <option value="none" ${block.background_type === 'none' || !block.background_type ? 'selected' : ''}>Ingen (grå)</option>
@@ -1781,6 +1784,7 @@
                     block.title_lines = get('title_lines').split(',').map(s => s.trim()).filter(Boolean);
                     block.highlight_index = parseInt(get('highlight_index') || '2', 10);
                     block.cta_label = get('cta_label');
+                    block.cta_url = get('cta_url');
                     block.background_type = get('background_type') || 'none';
                     block.background_url = get('background_url');
                 } else if (type === 'editorial') {
