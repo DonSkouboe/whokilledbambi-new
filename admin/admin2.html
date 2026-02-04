@@ -857,6 +857,23 @@
         const clearDraft = (section, id) => {
             try { localStorage.removeItem(draftKey(section, id)); } catch (err) {}
         };
+        const parseImageMeta = (url) => {
+            if (!url) return { src: '', fx: 50, fy: 50, z: 100 };
+            const [base, hash] = url.split('#');
+            if (!hash) return { src: base, fx: 50, fy: 50, z: 100 };
+            const raw = hash.startsWith('wkb=') ? hash.slice(4) : (hash.startsWith('focus=') ? hash.slice(6) : '');
+            if (!raw) return { src: base, fx: 50, fy: 50, z: 100 };
+            const parts = raw.split(',').map((p) => p.trim());
+            const fx = parseInt(parts[0] || '50', 10);
+            const fy = parseInt(parts[1] || '50', 10);
+            const z = parseInt(parts[2] || '100', 10);
+            return {
+                src: base,
+                fx: Number.isFinite(fx) ? fx : 50,
+                fy: Number.isFinite(fy) ? fy : 50,
+                z: Number.isFinite(z) ? z : 100
+            };
+        };
         const formatDateInput = (value) => {
             if (!value) return '';
             const date = new Date(value);
@@ -1246,6 +1263,13 @@
                             <button class="btn btn-primary" id="add-block-btn"><i class="fa-solid fa-plus"></i> Tilføj</button>
                         </div>
                     </div>
+                    <div class="form-section">
+                        <label class="form-label" style="display:flex; align-items:center; gap:10px;">
+                            <input id="page-live-preview" type="checkbox" checked>
+                            Live preview
+                        </label>
+                        <div class="form-help">Opdaterer automatisk forhåndsvisningen mens du skriver.</div>
+                    </div>
                 `;
 
                 blocks.forEach((block, idx) => {
@@ -1613,6 +1637,8 @@
             }
             bindUploadFields();
             bindMediaButtons();
+            bindLivePreview();
+            scheduleLivePreview();
         };
 
         
@@ -1907,6 +1933,54 @@ const bindUploadFields = () => {
             });
         };
 
+        const bindImageFocusActions = () => {
+            const inputX = inspectorBody.querySelector('#field-image-focus-x');
+            const inputY = inspectorBody.querySelector('#field-image-focus-y');
+            if (!inputX && !inputY) return;
+            inspectorBody.querySelectorAll('[data-action="image-focus-x"]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    if (!inputX) return;
+                    inputX.value = btn.dataset.value || '50';
+                    inputX.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+            });
+            inspectorBody.querySelectorAll('[data-action="image-focus-y"]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    if (!inputY) return;
+                    inputY.value = btn.dataset.value || '50';
+                    inputY.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+            });
+        };
+
+        let livePreviewTimer = null;
+        const isLivePreviewEnabled = () => {
+            if (state.section !== 'pages') return false;
+            const toggle = document.getElementById('page-live-preview');
+            return toggle && toggle.checked;
+        };
+
+        const scheduleLivePreview = () => {
+            if (!isLivePreviewEnabled()) return;
+            if (livePreviewTimer) clearTimeout(livePreviewTimer);
+            livePreviewTimer = setTimeout(() => updateLivePreview(), 250);
+        };
+
+        const bindLivePreview = () => {
+            if (state.section !== 'pages') return;
+            const toggle = document.getElementById('page-live-preview');
+            if (toggle) {
+                toggle.addEventListener('change', () => {
+                    if (toggle.checked) updateLivePreview();
+                });
+            }
+            inspectorBody.querySelectorAll('input, textarea, select').forEach((el) => {
+                if (el.type === 'file') return;
+                el.addEventListener('input', scheduleLivePreview);
+                el.addEventListener('change', scheduleLivePreview);
+            });
+        };
+
         const cancelEdit = () => {
             state.selected = null;
             inspectorBody.style.display = 'none';
@@ -1920,6 +1994,24 @@ const bindUploadFields = () => {
 
         const previewModal = document.getElementById('preview-modal');
         const previewIframe = document.getElementById('preview-iframe');
+
+        const updateLivePreview = async () => {
+            if (!isLivePreviewEnabled()) return;
+            const payload = {
+                type: 'page',
+                data: {
+                    title: document.getElementById('page-title')?.value || '',
+                    slug: document.getElementById('page-slug')?.value || '',
+                    show_in_nav: (document.getElementById('page-show')?.value || 'no') === 'yes',
+                    blocks: collectPageBlocks()
+                }
+            };
+
+            localStorage.setItem('wkbPreview', JSON.stringify(payload));
+            const url = `../index.html?preview=page&ts=${Date.now()}`;
+            previewIframe.src = url;
+            previewModal.style.display = 'flex';
+        };
 
         const closePreview = () => {
             previewModal.style.display = 'none';
