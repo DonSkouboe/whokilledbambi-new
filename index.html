@@ -621,26 +621,32 @@
         </section>
       );
 
-      const MediaTextBlock = ({ title, body, media_url, media_aspect, credit, layout = 'image-left', isVideo = false }) => (
-        <section className="py-20 px-6 md:px-12 max-w-6xl mx-auto">
-          <div className={`grid md:grid-cols-2 gap-10 items-center ${layout === 'image-right' ? 'md:flex-row-reverse' : ''}`}>
-            <div className="order-2 md:order-1">
-              <h3 className="text-4xl md:text-5xl font-serif text-wkbInk mb-6">{title}</h3>
-              <div className="text-lg md:text-xl text-wkbInk/80 leading-relaxed">{body ? <RichTextRenderer html={body} /> : null}</div>
-            </div>
-            <div className="order-1 md:order-2">
-              <div className={`overflow-hidden rounded-sm bg-[#E0DCD5] ${aspectClass(media_aspect)}`}>
-                {isVideo ? (
-                  <video src={media_url} controls className="w-full h-full object-cover" />
-                ) : (
-                  <img src={media_url} alt={title} className="w-full h-full object-cover" />
-                )}
+      const MediaTextBlock = ({ title, body, media_url, media_aspect, credit, layout = 'image-left', stack = 'image-first', isVideo = false }) => {
+        const textOrder = stack === 'text-first' ? 'order-1' : 'order-2';
+        const mediaOrder = stack === 'text-first' ? 'order-2' : 'order-1';
+        const mdTextOrder = layout === 'image-right' ? 'md:order-2' : 'md:order-1';
+        const mdMediaOrder = layout === 'image-right' ? 'md:order-1' : 'md:order-2';
+        return (
+          <section className="py-20 px-6 md:px-12 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-10 items-center">
+              <div className={`${textOrder} ${mdTextOrder}`}>
+                <h3 className="text-4xl md:text-5xl font-serif text-wkbInk mb-6">{title}</h3>
+                <div className="text-lg md:text-xl text-wkbInk/80 leading-relaxed">{body ? <RichTextRenderer html={body} /> : null}</div>
               </div>
-              {credit && <div className="text-xs uppercase tracking-widest text-wkbInk/50 mt-3">{credit}</div>}
+              <div className={`${mediaOrder} ${mdMediaOrder}`}>
+                <div className={`overflow-hidden rounded-sm bg-[#E0DCD5] ${aspectClass(media_aspect)}`}>
+                  {isVideo ? (
+                    <video src={media_url} controls className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={media_url} alt={title} className="w-full h-full object-cover" />
+                  )}
+                </div>
+                {credit && <div className="text-xs uppercase tracking-widest text-wkbInk/50 mt-3">{credit}</div>}
+              </div>
             </div>
-          </div>
-        </section>
-      );
+          </section>
+        );
+      };
 
       const QuoteBlock = ({ quote, author, rating }) => (
         <section className="py-20 px-6 md:px-12 max-w-4xl mx-auto">
@@ -743,8 +749,8 @@
                 return <HeroBlock key={idx} tagline={block.tagline} title_lines={block.title_lines} highlight_index={block.highlight_index} highlight_class={block.highlight_class} cta_label={block.cta_label} />;
               }
               if (type === 'editorial') return <EditorialBlock key={idx} heading={block.heading} body={block.body} align={block.align} />;
-              if (type === 'image_text') return <MediaTextBlock key={idx} title={block.title} body={block.body} media_url={block.media_url} media_aspect={block.media_aspect} credit={block.credit} layout={block.layout} />;
-              if (type === 'video_text') return <MediaTextBlock key={idx} title={block.title} body={block.body} media_url={block.media_url} media_aspect={block.media_aspect} credit={block.credit} layout={block.layout} isVideo />;
+              if (type === 'image_text') return <MediaTextBlock key={idx} title={block.title} body={block.body} media_url={block.media_url} media_aspect={block.media_aspect} credit={block.credit} layout={block.layout} stack={block.stack} />;
+              if (type === 'video_text') return <MediaTextBlock key={idx} title={block.title} body={block.body} media_url={block.media_url} media_aspect={block.media_aspect} credit={block.credit} layout={block.layout} stack={block.stack} isVideo />;
               if (type === 'quote') return <QuoteBlock key={idx} quote={block.quote} author={block.author} rating={block.rating} />;
               if (type === 'grid') return <GridBlock key={idx} title={block.title} cards={block.cards} c1_title={block.c1_title} c1_body={block.c1_body} c2_title={block.c2_title} c2_body={block.c2_body} c3_title={block.c3_title} c3_body={block.c3_body} />;
               if (type === 'gallery') return <GalleryBlock key={idx} title={block.title} g1_url={block.g1_url} g1_credit={block.g1_credit} g2_url={block.g2_url} g2_credit={block.g2_credit} g3_url={block.g3_url} g3_credit={block.g3_credit} />;

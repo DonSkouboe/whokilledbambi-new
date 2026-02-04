@@ -1415,6 +1415,12 @@
                                 <option value="image-right" ${block.layout === 'image-right' ? 'selected' : ''}>Medie højre</option>
                             </select>
                             <div style="height:10px;"></div>
+                            <label class="form-label">Tekst placering (mobil)</label>
+                            <select class="form-select" data-field="stack">
+                                <option value="image-first" ${block.stack === 'image-first' || !block.stack ? 'selected' : ''}>Tekst under</option>
+                                <option value="text-first" ${block.stack === 'text-first' ? 'selected' : ''}>Tekst over</option>
+                            </select>
+                            <div style="height:10px;"></div>
                             <label class="form-label">Titel</label>
                             <input class="form-input" data-field="title" type="text" value="${block.title || ''}">
                             <div style="height:10px;"></div>
@@ -1762,6 +1768,7 @@
                     block.align = get('align') || 'left';
                 } else if (type === 'image_text' || type === 'video_text') {
                     block.layout = get('layout') || 'image-left';
+                    block.stack = get('stack') || 'image-first';
                     block.title = get('title');
                     block.body = get('body');
                     block.media_url = get('media_url');
