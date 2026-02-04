@@ -718,9 +718,6 @@
                 <div class="nav-item" data-section="collaborators">
                     <i class="fa-solid fa-handshake"></i> <span>Samarbejde</span>
                 </div>
-                <div class="nav-item" data-section="wkbplus">
-                    <i class="fa-solid fa-plus"></i> <span>WKB+</span>
-                </div>
                 <div class="nav-item" data-section="pages">
                     <i class="fa-solid fa-layer-group"></i> <span>Sider</span>
                 </div>
@@ -805,6 +802,24 @@
         </div>
     </div>
 
+    <!-- MEDIA LIBRARY MODAL -->
+    <div id="media-library-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-card" style="max-width:780px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <div>
+                    <h2 style="margin-bottom:4px; font-family:'Cormorant Garamond'; font-size:1.5rem; color:white;">Mediebibliotek</h2>
+                    <p style="color: var(--textMuted); font-size:0.85rem;">Vælg en fil der allerede er uploadet.</p>
+                </div>
+                <button id="media-close" class="icon-btn" title="Luk"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <input id="media-search" class="form-input" type="text" placeholder="Søg i filer..." style="flex:1;">
+                <button id="media-refresh" class="icon-btn" title="Opdater"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+            <div id="media-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:12px; max-height:420px; overflow:auto;"></div>
+        </div>
+    </div>
+
     <!-- LOGIC -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -818,7 +833,6 @@
             events: { title: 'Koncerter', subtitle: 'Tourkalender og billetter' },
             members: { title: 'Musikere', subtitle: 'Bandmedlemmer og besætning' },
             collaborators: { title: 'Samarbejdspartnere', subtitle: 'Marquee liste' },
-            wkbplus: { title: 'WKB+', subtitle: 'Samarbejder og indhold' },
             pages: { title: 'Sider', subtitle: 'Byg sider med blokke' },
             footer: { title: 'Socials', subtitle: 'Footer links' },
             content: { title: 'Sider', subtitle: 'JSON Struktur og indhold' }
@@ -894,22 +908,12 @@
 
             const newBtn = document.getElementById('new-btn');
             if (newBtn) {
-                newBtn.style.display = (section === 'wkbplus' || section === 'footer') ? 'none' : 'inline-flex';
+                newBtn.style.display = (section === 'footer') ? 'none' : 'inline-flex';
             }
             
             setActiveNav(section);
             await loadSection(section);
             renderList();
-
-            if (section === 'wkbplus') {
-                const plusItem = state.items.find((i) => i.slug === 'plus') || state.items[0];
-                if (plusItem) {
-                    selectItem(plusItem);
-                } else {
-                    state.selected = { _new: true, slug: 'plus', title: 'WKB+', data: {} };
-                    selectItem(state.selected);
-                }
-            }
 
             if (section === 'footer') {
                 const footerItem = state.items.find((i) => i.slug === 'footer') || state.items[0];
@@ -928,7 +932,6 @@
             else if (section === 'events') query = supabaseClient.from('events').select('*').order('event_date', { ascending: true });
             else if (section === 'members') query = supabaseClient.from('members').select('*').order('sort_order', { ascending: true });
             else if (section === 'collaborators') query = supabaseClient.from('collaborators').select('*').order('sort_order', { ascending: true });
-            else if (section === 'wkbplus') query = supabaseClient.from('content_pages').select('*').eq('slug', 'plus').order('slug', { ascending: true });
             else if (section === 'footer') query = supabaseClient.from('content_pages').select('*').eq('slug', 'footer').order('slug', { ascending: true });
             else if (section === 'pages') query = supabaseClient.from('content_pages').select('*').order('slug', { ascending: true });
             else query = supabaseClient.from('content_pages').select('*').order('slug', { ascending: true });
@@ -1039,10 +1042,6 @@
                     thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-user-tag"></i></div>`;
                     subtitle = 'Samarbejde';
                     metaContent = `<span class="pill">#${item.sort_order ?? 0}</span>`;
-                } else if (state.section === 'wkbplus') {
-                    thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-plus"></i></div>`;
-                    subtitle = 'WKB+';
-                    metaContent = `<span class="pill">Side</span>`;
                 } else if (state.section === 'pages') {
                     thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-layer-group"></i></div>`;
                     subtitle = item.slug || 'Side';
@@ -1122,6 +1121,16 @@
             return { url: data.publicUrl, path: filePath };
         };
 
+        const uploadMedia = async (file) => {
+            const fileExt = file.name.split('.').pop();
+            const filePath = `${crypto.randomUUID()}.${fileExt}`;
+            const { error } = await supabaseClient.storage.from('media').upload(filePath, file, { upsert: true });
+            if (error) throw error;
+            const { data } = await supabaseClient.storage.from('media').getPublicUrl(filePath);
+            return { url: data.publicUrl, path: filePath };
+        };
+
+
 
         const parseImageMeta = (url) => {
             if (!url) return { src: '', fx: '', fy: '', z: '' };
@@ -1173,6 +1182,7 @@
                 const focusXRaw = get('image_focus_x');
                 const focusYRaw = get('image_focus_y');
                 const scaleRaw = get('image_scale');
+                const aspectRaw = get('image_aspect');
                 sections.push({
                     id: get('id') || `section-${index}`,
                     label: get('label'),
@@ -1186,7 +1196,8 @@
                     layout: get('layout') || 'image-left',
                     image_focus_x: focusXRaw ? parseInt(focusXRaw, 10) : undefined,
                     image_focus_y: focusYRaw ? parseInt(focusYRaw, 10) : undefined,
-                    image_scale: scaleRaw ? parseInt(scaleRaw, 10) : undefined
+                    image_scale: scaleRaw ? parseInt(scaleRaw, 10) : undefined,
+                    image_aspect: aspectRaw || undefined
                 });
             });
 
@@ -1222,7 +1233,10 @@
                     </div>
                     <div class="form-section">
                         <label class="form-label">Billede</label>
-                        <input id="field-image" class="form-input" type="text" value="${imageMeta.src || ''}" placeholder="https://...">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input id="field-image" class="form-input" type="text" value="${imageMeta.src || ''}" placeholder="https://..." style="flex:1;">
+                            <button class="icon-btn" data-action="open-media" data-media-target="field-image" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
+                        </div>
                         <div style="margin-top:8px; font-size:0.8rem; color:var(--textMuted);">Eller upload ny:</div>
                         <input id="field-upload" class="form-input" type="file" accept="image/*" style="margin-top:4px;">
                     </div>
@@ -1292,7 +1306,10 @@
                     </div>
                     <div class="form-section">
                         <label class="form-label">Billede URL</label>
-                        <input id="field-image" class="form-input" type="text" value="${imageMeta.src || ''}">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input id="field-image" class="form-input" type="text" value="${imageMeta.src || ''}" style="flex:1;">
+                            <button class="icon-btn" data-action="open-media" data-media-target="field-image" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
+                        </div>
                         <input id="field-upload" class="form-input" type="file" accept="image/*" style="margin-top:4px;">
                     </div>
                     <div class="form-section">
@@ -1448,7 +1465,20 @@
                     } else if (type === 'image') {
                         html += `
                             <label class="form-label">Billede URL</label>
-                            <input class="form-input" data-field="image_url" type="text" value="${block.image_url || ''}">
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input class="form-input" data-field="image_url" type="text" value="${block.image_url || ''}" style="flex:1;">
+                                <button class="icon-btn" data-action="open-media" data-media-field="image_url" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
+                            </div>
+                            <input class="form-input" type="file" accept="image/*" data-upload-target="image_url" style="margin-top:6px;">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Format</label>
+                            <select class="form-select" data-field="image_aspect">
+                                <option value="4:3" ${block.image_aspect === '4:3' || !block.image_aspect ? 'selected' : ''}>4:3</option>
+                                <option value="16:9" ${block.image_aspect === '16:9' ? 'selected' : ''}>16:9</option>
+                                <option value="21:9" ${block.image_aspect === '21:9' ? 'selected' : ''}>21:9</option>
+                                <option value="3:4" ${block.image_aspect === '3:4' ? 'selected' : ''}>3:4</option>
+                                <option value="1:1" ${block.image_aspect === '1:1' ? 'selected' : ''}>1:1</option>
+                            </select>
                             <div style="height:10px;"></div>
                             <label class="form-label">Billede fokus (X/Y)</label>
                             <div style="display:flex; gap:8px; margin-bottom:8px;">
@@ -1479,7 +1509,7 @@
 
                     html += `</div>`;
                 });
-            } else if (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') {
+            } else if (state.section === 'content' || state.section === 'footer') {
                 const slug = item.slug || '';
                 const data = item.data || {};
                 contentSlug = slug;
@@ -1487,7 +1517,7 @@
                 html += `
                     <div class="form-section">
                         <label class="form-label">Slug (URL)</label>
-                        <input id="field-slug" class="form-input" type="text" value="${slug}" ${item._new && state.section !== 'wkbplus' && state.section !== 'footer' ? '' : 'disabled'}>
+                        <input id="field-slug" class="form-input" type="text" value="${slug}" ${item._new && state.section !== 'footer' ? '' : 'disabled'}>
                     </div>
                     <div class="form-section">
                         <label class="form-label">Titel</label>
@@ -1608,7 +1638,20 @@
                                 </select>
                                 <div style="height:10px;"></div>
                                 <label class="form-label">Billede URL</label>
-                                <input class="form-input" data-field="image_url" type="text" value="${section.image_url || ''}">
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <input class="form-input" data-field="image_url" type="text" value="${section.image_url || ''}" style="flex:1;">
+                                    <button class="icon-btn" data-action="open-media" data-media-field="image_url" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
+                                </div>
+                                <input class="form-input" type="file" accept="image/*" data-upload-target="image_url" style="margin-top:6px;">
+                                <div style="height:10px;"></div>
+                                <label class="form-label">Format</label>
+                                <select class="form-select" data-field="image_aspect">
+                                    <option value="4:3" ${section.image_aspect === '4:3' || !section.image_aspect ? 'selected' : ''}>4:3</option>
+                                    <option value="16:9" ${section.image_aspect === '16:9' ? 'selected' : ''}>16:9</option>
+                                    <option value="21:9" ${section.image_aspect === '21:9' ? 'selected' : ''}>21:9</option>
+                                    <option value="3:4" ${section.image_aspect === '3:4' ? 'selected' : ''}>3:4</option>
+                                    <option value="1:1" ${section.image_aspect === '1:1' ? 'selected' : ''}>1:1</option>
+                                </select>
                                 <div style="height:10px;"></div>
                                 <label class="form-label">Billede fokus (X/Y)</label>
                                 <div style="display:flex; gap:8px; margin-bottom:8px;">
@@ -1627,7 +1670,11 @@
                                 <input class="form-input" data-field="image_scale" type="number" min="100" max="160" value="${section.image_scale ?? ''}" placeholder="100">
                                 <div style="height:10px;"></div>
                                 <label class="form-label">Video URL</label>
-                                <input class="form-input" data-field="video_url" type="text" value="${section.video_url || ''}">
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <input class="form-input" data-field="video_url" type="text" value="${section.video_url || ''}" style="flex:1;">
+                                    <button class="icon-btn" data-action="open-media" data-media-field="video_url" title="Vælg eksisterende"><i class="fa-solid fa-film"></i></button>
+                                </div>
+                                <input class="form-input" type="file" accept="video/*" data-upload-target="video_url" style="margin-top:6px;">
                                 <div style="height:10px;"></div>
                                 <label class="form-label">Billedkredit</label>
                                 <input class="form-input" data-field="image_credit" type="text" value="${section.image_credit || ''}">
@@ -1664,7 +1711,7 @@
                 }
             }
 
-            const showDelete = !item._new && state.section !== 'wkbplus' && state.section !== 'footer';
+            const showDelete = !item._new && state.section !== 'footer';
 
             html += `
                 <button class="btn-action" data-action="preview"><i class="fa-solid fa-eye"></i> Forhåndsvisning</button>
@@ -1683,6 +1730,8 @@
             if (state.section === 'pages') {
                 bindPageActions();
             }
+            bindUploadFields();
+            bindMediaButtons();
         };
 
         
@@ -1718,6 +1767,7 @@
                     block.image_focus_x = parseInt(get('image_focus_x') || '', 10) || undefined;
                     block.image_focus_y = parseInt(get('image_focus_y') || '', 10) || undefined;
                     block.image_scale = parseInt(get('image_scale') || '', 10) || undefined;
+                    block.image_aspect = get('image_aspect') || undefined;
                     block.caption = get('caption');
                 } else if (type === 'contact') {
                     block.title = get('title');
@@ -1786,12 +1836,122 @@
                 });
             });
         };
-const bindImageFocusActions = () => {
+        const bindImageFocusActions = () => {
             inspectorBody.querySelectorAll('[data-focus-target]').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     const targetId = btn.dataset.focusTarget;
                     const input = targetId ? document.getElementById(targetId) : null;
                     if (input) input.value = btn.dataset.value || '50';
+                });
+            });
+        };
+
+        const mediaModal = document.getElementById('media-library-modal');
+        const mediaList = document.getElementById('media-list');
+        const mediaSearch = document.getElementById('media-search');
+        const mediaClose = document.getElementById('media-close');
+        const mediaRefresh = document.getElementById('media-refresh');
+        let mediaTarget = null;
+        let mediaItems = [];
+
+        const openMediaLibrary = async (target) => {
+            mediaTarget = target;
+            mediaModal.style.display = 'flex';
+            await loadMediaList();
+        };
+
+        const closeMediaLibrary = () => {
+            mediaModal.style.display = 'none';
+            mediaTarget = null;
+        };
+
+        const loadMediaList = async () => {
+            const { data, error } = await supabaseClient.storage
+                .from('media')
+                .list('', { limit: 200, offset: 0, sortBy: { column: 'name', order: 'asc' } });
+            if (error) {
+                console.error(error);
+                mediaList.innerHTML = '<div style="color:#aaa; padding:12px;">Kunne ikke hente filer.</div>';
+                return;
+            }
+            mediaItems = (data || []).filter((f) => !f.name.endsWith('/'));
+            renderMediaList();
+        };
+
+        const renderMediaList = () => {
+            const q = (mediaSearch.value || '').toLowerCase();
+            const items = mediaItems.filter((i) => i.name.toLowerCase().includes(q));
+            if (!items.length) {
+                mediaList.innerHTML = '<div style="color:#aaa; padding:12px;">Ingen filer fundet.</div>';
+                return;
+            }
+            mediaList.innerHTML = items.map((item) => {
+                const url = supabaseClient.storage.from('media').getPublicUrl(item.name).data.publicUrl;
+                const isImage = item.name.match(/\.(png|jpe?g|gif|webp|avif)$/i);
+                const isVideo = item.name.match(/\.(mp4|webm|mov)$/i);
+                const thumb = isImage
+                    ? `<img src="${url}" style="width:100%; height:100px; object-fit:cover; border-radius:4px;">`
+                    : `<div style="height:100px; display:flex; align-items:center; justify-content:center; background:#111; border-radius:4px; color:#777;">${isVideo ? 'VIDEO' : 'FIL'}</div>`;
+                return `
+                    <div class="list-item" data-media-url="${url}" style="display:block;">
+                        ${thumb}
+                        <div style="margin-top:6px; font-size:0.75rem; color:#bbb; word-break:break-all;">${item.name}</div>
+                    </div>
+                `;
+            }).join('');
+
+            mediaList.querySelectorAll('[data-media-url]').forEach((el) => {
+                el.addEventListener('click', () => {
+                    const url = el.getAttribute('data-media-url');
+                    if (!mediaTarget || !url) return;
+                    if (mediaTarget.field) {
+                        const scope = mediaTarget.scope;
+                        const input = scope ? scope.querySelector(`[data-field="${mediaTarget.field}"]`) : null;
+                        if (input) input.value = url;
+                    } else if (mediaTarget.id) {
+                        const input = document.getElementById(mediaTarget.id);
+                        if (input) input.value = url;
+                    }
+                    closeMediaLibrary();
+                });
+            });
+        };
+
+        mediaClose.addEventListener('click', closeMediaLibrary);
+        mediaModal.addEventListener('click', (e) => { if (e.target === mediaModal) closeMediaLibrary(); });
+        mediaRefresh.addEventListener('click', loadMediaList);
+        mediaSearch.addEventListener('input', renderMediaList);
+
+        const bindUploadFields = () => {
+            inspectorBody.querySelectorAll('input[type="file"][data-upload-target]').forEach((input) => {
+                input.addEventListener('change', async () => {
+                    const file = input.files && input.files[0];
+                    if (!file) return;
+                    try {
+                        const upload = await uploadMedia(file);
+                        const scope = input.closest('[data-plus-section]') || input.closest('[data-page-block]') || inspectorBody;
+                        const target = scope.querySelector(`[data-field="${input.dataset.uploadTarget}"]`) || document.getElementById(input.dataset.uploadTarget);
+                        if (target) target.value = upload.url;
+                    } catch (err) {
+                        console.error(err);
+                        alert('Upload fejlede.');
+                    }
+                });
+            });
+        };
+
+        const bindMediaButtons = () => {
+            inspectorBody.querySelectorAll('[data-action="open-media"]').forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const field = btn.dataset.mediaField || '';
+                    const id = btn.dataset.mediaTarget || '';
+                    if (field) {
+                        const scope = btn.closest('[data-plus-section]') || btn.closest('[data-page-block]') || inspectorBody;
+                        openMediaLibrary({ field, scope });
+                    } else if (id) {
+                        openMediaLibrary({ id });
+                    }
                 });
             });
         };
@@ -1987,9 +2147,6 @@ const bindImageFocusActions = () => {
                     show_in_nav: (document.getElementById('page-show')?.value || 'no') === 'yes',
                     blocks: collectPageBlocks()
                 };
-            } else if (state.section === 'wkbplus') {
-                alert('Preview for WKB+ er ikke aktiveret endnu.');
-                return;
             } else {
                 alert('Preview er kun tilgængeligt for visuelle elementer.');
                 return;
@@ -2049,15 +2206,15 @@ const bindImageFocusActions = () => {
                         name: document.getElementById('field-name').value.trim(),
                         sort_order: parseInt(document.getElementById('field-order').value || '0', 10)
                     };
-                } else if (state.section === 'pages') {
-                    const title = document.getElementById('page-title')?.value?.trim() || '';
-                    const slug = document.getElementById('page-slug')?.value?.trim() || '';
-                    const showNav = (document.getElementById('page-show')?.value || 'no') === 'yes';
-                    const blocks = collectPageBlocks();
-                    payload.data = { page_type: 'page', show_in_nav: showNav, blocks };
-                    payload.title = title;
-                    payload.slug = slug;
-                } else if (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') {
+            } else if (state.section === 'pages') {
+                const title = document.getElementById('page-title')?.value?.trim() || '';
+                const slug = document.getElementById('page-slug')?.value?.trim() || '';
+                const showNav = (document.getElementById('page-show')?.value || 'no') === 'yes';
+                const blocks = collectPageBlocks();
+                payload.data = { page_type: 'page', show_in_nav: showNav, blocks };
+                payload.title = title;
+                payload.slug = slug;
+                } else if (state.section === 'content' || state.section === 'footer') {
                     const slug = document.getElementById('field-slug').value.trim();
                     const title = document.getElementById('field-title').value.trim();
 
@@ -2099,7 +2256,7 @@ const bindImageFocusActions = () => {
                     payload.slug = slug;
                 }
 
-                const table = (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer' || state.section === 'pages') ? 'content_pages' : state.section;
+                const table = (state.section === 'content' || state.section === 'footer' || state.section === 'pages') ? 'content_pages' : state.section;
                 if (item._new) {
                     await supabaseClient.from(table).insert(payload);
                 } else {
@@ -2118,7 +2275,7 @@ const bindImageFocusActions = () => {
         const deleteItem = async () => {
             if (!confirm('Er du sikker på du vil slette dette?')) return;
             try {
-                const table = (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer' || state.section === 'pages') ? 'content_pages' : state.section;
+                const table = (state.section === 'content' || state.section === 'footer' || state.section === 'pages') ? 'content_pages' : state.section;
                 await supabaseClient.from(table).delete().eq('id', state.selected.id);
                 await loadSection(state.section);
                 renderList();
