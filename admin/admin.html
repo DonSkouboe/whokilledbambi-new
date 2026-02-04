@@ -1057,8 +1057,7 @@
 
                 previewTitle.textContent = title;
                 previewDate.textContent = dateVal ? new Date(dateVal).toLocaleDateString('da-DK') : '';
-                previewText.textContent = [subtitle, location, ticket].filter(Boolean).join('
-');
+                previewText.textContent = [subtitle, location, ticket].filter(Boolean).join('\n');
                 previewImage.innerHTML = `<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#888;">Ingen billede</div>`;
             }
 
