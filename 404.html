@@ -9,7 +9,8 @@
         var path = window.location.pathname || '/';
         var search = window.location.search || '';
         var hash = window.location.hash || '';
-        var target = '/?redirect=' + encodeURIComponent(path + search + hash);
+        var base = path.replace(/\/[^\/]*$/, '/');
+        var target = base + '?redirect=' + encodeURIComponent(path + search + hash);
         window.location.replace(target);
       })();
     </script>
