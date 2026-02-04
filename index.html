@@ -128,9 +128,12 @@
       const { useState, useEffect, useRef } = React;
       
       const getPageFromPath = () => {
-        const path = window.location.pathname;
-        if (path === '/') return 'home';
-        return path.replace('/', '') || 'home';
+        const path = window.location.pathname || '';
+        if (path === '/' || path === '') return 'home';
+        if (path.endsWith('/index.html') || path.endsWith('index.html')) return 'home';
+        const slug = path.replace(/^\/+/, '').replace(/\/+$/, '');
+        if (!slug || slug.includes('.') || slug.includes(':')) return 'home';
+        return slug;
       };
       
       const previewMode = new URLSearchParams(window.location.search).get('preview');
