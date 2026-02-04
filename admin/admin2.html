@@ -517,12 +517,28 @@
             justify-content: stretch;
             z-index: 100;
         }
+        .preview-overlay.docked {
+            background: transparent;
+            align-items: stretch;
+            justify-content: flex-end;
+            pointer-events: none;
+        }
 
         .preview-card {
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
+        }
+        .preview-overlay.docked .preview-card {
+            width: min(46vw, 760px);
+            height: calc(100vh - 120px);
+            margin: 60px 24px 60px 0;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+            pointer-events: auto;
         }
 
         .preview-header {
@@ -1709,7 +1725,7 @@
                     const blocks = collectPageBlocks();
                     blocks.push({ type: blockType });
                     state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
-                    renderForm();
+                    renderInspector();
                 });
             }
 
@@ -1720,7 +1736,7 @@
                     const blocks = collectPageBlocks();
                     blocks.splice(index, 1);
                     state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
-                    renderForm();
+                    renderInspector();
                 });
             });
 
@@ -1734,7 +1750,7 @@
                     blocks[index - 1] = blocks[index];
                     blocks[index] = tmp;
                     state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
-                    renderForm();
+                    renderInspector();
                 });
             });
 
@@ -1748,7 +1764,7 @@
                     blocks[index + 1] = blocks[index];
                     blocks[index] = tmp;
                     state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
-                    renderForm();
+                    renderInspector();
                 });
             });
 
@@ -1770,7 +1786,7 @@
                     const [moved] = blocks.splice(dragIndex, 1);
                     blocks.splice(dropIndex, 0, moved);
                     state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
-                    renderForm();
+                    renderInspector();
                 });
             });
         };
@@ -1818,7 +1834,7 @@ const bindUploadFields = () => {
                     const current = readPlusFormData();
                     current.sections.push({ id: `section-${Date.now()}`, layout: 'image-left' });
                     state.selected = { ...state.selected, title: snapshotTitle, slug: snapshotSlug, data: current };
-                    renderForm();
+                    renderInspector();
                 });
             }
 
@@ -1833,7 +1849,7 @@ const bindUploadFields = () => {
                         current.sections.push({ id: `section-${Date.now()}`, layout: 'image-left' });
                     }
                     state.selected = { ...state.selected, title: snapshotTitle, slug: snapshotSlug, data: current };
-                    renderForm();
+                    renderInspector();
                 });
             });
 
@@ -1848,7 +1864,7 @@ const bindUploadFields = () => {
                     current.sections[index - 1] = current.sections[index];
                     current.sections[index] = tmp;
                     state.selected = { ...state.selected, title: snapshotTitle, slug: snapshotSlug, data: current };
-                    renderForm();
+                    renderInspector();
                 });
             });
 
@@ -1863,7 +1879,7 @@ const bindUploadFields = () => {
                     current.sections[index + 1] = current.sections[index];
                     current.sections[index] = tmp;
                     state.selected = { ...state.selected, title: snapshotTitle, slug: snapshotSlug, data: current };
-                    renderForm();
+                    renderInspector();
                 });
             });
 
@@ -1972,6 +1988,7 @@ const bindUploadFields = () => {
             if (toggle) {
                 toggle.addEventListener('change', () => {
                     if (toggle.checked) updateLivePreview();
+                    else closePreview();
                 });
             }
             inspectorBody.querySelectorAll('input, textarea, select').forEach((el) => {
@@ -2009,6 +2026,7 @@ const bindUploadFields = () => {
 
             localStorage.setItem('wkbPreview', JSON.stringify(payload));
             const url = `../index.html?preview=page&ts=${Date.now()}`;
+            previewModal.classList.add('docked');
             previewIframe.src = url;
             previewModal.style.display = 'flex';
         };
@@ -2016,6 +2034,7 @@ const bindUploadFields = () => {
         const closePreview = () => {
             previewModal.style.display = 'none';
             previewIframe.src = '';
+            previewModal.classList.remove('docked');
         };
 
         document.getElementById('preview-close').addEventListener('click', closePreview);
@@ -2074,6 +2093,7 @@ const bindUploadFields = () => {
             localStorage.setItem('wkbPreview', JSON.stringify(payload));
             const pageMap = { news: 'news', events: 'calendar', members: 'about', pages: 'page' };
             const page = pageMap[state.section] || 'index';
+            previewModal.classList.remove('docked');
             previewIframe.src = `../index.html?preview=${page}`;
             previewModal.style.display = 'flex';
         };
