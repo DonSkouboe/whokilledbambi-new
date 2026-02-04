@@ -1396,6 +1396,20 @@
                             <div style="height:10px;"></div>
                             <label class="form-label">CTA tekst</label>
                             <input class="form-input" data-field="cta_label" type="text" value="${block.cta_label || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Baggrundstype</label>
+                            <select class="form-select" data-field="background_type">
+                                <option value="none" ${block.background_type === 'none' || !block.background_type ? 'selected' : ''}>Ingen (grå)</option>
+                                <option value="image" ${block.background_type === 'image' ? 'selected' : ''}>Billede</option>
+                                <option value="video" ${block.background_type === 'video' ? 'selected' : ''}>Video</option>
+                            </select>
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Baggrund URL</label>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input class="form-input" data-field="background_url" type="text" value="${block.background_url || ''}" style="flex:1;">
+                                <button class="icon-btn" data-action="open-media" data-media-field="background_url" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
+                            </div>
+                            <input class="form-input" type="file" accept="image/*,video/*" data-upload-target="background_url" style="margin-top:6px;">
                         `;
                     } else if (type === 'editorial') {
                         html += `
@@ -1767,6 +1781,8 @@
                     block.title_lines = get('title_lines').split(',').map(s => s.trim()).filter(Boolean);
                     block.highlight_index = parseInt(get('highlight_index') || '2', 10);
                     block.cta_label = get('cta_label');
+                    block.background_type = get('background_type') || 'none';
+                    block.background_url = get('background_url');
                 } else if (type === 'editorial') {
                     block.heading = get('heading');
                     block.body = get('body');

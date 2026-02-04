@@ -708,11 +708,25 @@
         </section>
       );
 
-      const HeroBlock = ({ tagline, title_lines, highlight_index, highlight_class, cta_label }) => (
-        <section className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6 py-20 relative overflow-hidden">
+      const HeroBlock = ({ tagline, title_lines, highlight_index, highlight_class, cta_label, background_type = 'none', background_url = '' }) => (
+        <section className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6 py-20 relative overflow-hidden bg-[#E5E2DB]">
+          {background_type === 'video' && background_url ? (
+            <div className="absolute inset-0 -z-10">
+              <video autoPlay loop muted playsInline className="w-full h-full object-cover">
+                <source src={background_url} type="video/mp4" />
+              </video>
+              <div className="absolute inset-0 bg-wkbPaper/40 mix-blend-multiply"></div>
+            </div>
+          ) : null}
+          {background_type === 'image' && background_url ? (
+            <div className="absolute inset-0 -z-10">
+              <img src={background_url} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-wkbPaper/40 mix-blend-multiply"></div>
+            </div>
+          ) : null}
           <div className="absolute -top-10 -left-10 w-72 h-72 rounded-full bg-wkbCoral/20 blur-3xl"></div>
           <div className="absolute -bottom-10 -right-10 w-80 h-80 rounded-full bg-wkbSage/30 blur-3xl"></div>
-          <div className="relative z-10">
+          <div className="relative z-10 flex flex-col items-center">
             <div className="mb-6">
               <span className="text-[10px] tracking-[0.4em] uppercase text-wkbInk/50 font-bold">{tagline || 'Det Danske Strygerensemble'}</span>
             </div>
@@ -730,10 +744,12 @@
               })}
             </h1>
             {cta_label && (
-              <button className="group px-8 py-3 border border-wkbInk/20 rounded-full hover:border-wkbInk transition-all duration-500 flex items-center gap-3 bg-wkbPaper/50 backdrop-blur-sm">
-                <span className="text-xs uppercase tracking-widest group-hover:mr-2 transition-all">{cta_label}</span>
-                <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
-              </button>
+              <div className="flex justify-center w-full">
+                <button className="group px-8 py-3 border border-wkbInk/20 rounded-full hover:border-wkbInk transition-all duration-500 flex items-center gap-3 bg-wkbPaper/50 backdrop-blur-sm">
+                  <span className="text-xs uppercase tracking-widest group-hover:mr-2 transition-all">{cta_label}</span>
+                  <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+                </button>
+              </div>
             )}
           </div>
         </section>
@@ -746,7 +762,7 @@
             {blocks.map((block, idx) => {
               const type = block.type;
               if (type === 'hero') {
-                return <HeroBlock key={idx} tagline={block.tagline} title_lines={block.title_lines} highlight_index={block.highlight_index} highlight_class={block.highlight_class} cta_label={block.cta_label} />;
+                return <HeroBlock key={idx} tagline={block.tagline} title_lines={block.title_lines} highlight_index={block.highlight_index} highlight_class={block.highlight_class} cta_label={block.cta_label} background_type={block.background_type} background_url={block.background_url} />;
               }
               if (type === 'editorial') return <EditorialBlock key={idx} heading={block.heading} body={block.body} align={block.align} />;
               if (type === 'image_text') return <MediaTextBlock key={idx} title={block.title} body={block.body} media_url={block.media_url} media_aspect={block.media_aspect} credit={block.credit} layout={block.layout} stack={block.stack} />;
