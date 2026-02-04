@@ -750,15 +750,15 @@
                     <div className="flex w-full h-full">
                     <nav className="sidebar-left">
                         <div className="brand">
-                            <i class="fa-solid fa-bolt"></i> WKB<span>CMS</span>
+                            <i className="fa-solid fa-bolt"></i> WKB<span>CMS</span>
                         </div>
                         <div className="components-list">
                             <div className="category-title">Indhold</div>
-                            <div className={`nav-item ${view==='news'?'active':''}`} onClick={() => handleNavClick('news')}><i class="fa-regular fa-newspaper"></i> <span>Nyheder</span></div>
-                            <div className={`nav-item ${view==='events'?'active':''}`} onClick={() => handleNavClick('events')}><i class="fa-solid fa-calendar-days"></i> <span>Koncerter</span></div>
-                            <div className={`nav-item ${view==='members'?'active':''}`} onClick={() => handleNavClick('members')}><i class="fa-solid fa-users"></i> <span>Musikere</span></div>
-                            <div className="category-title" style="margin-top:20px;">Struktur</div>
-                            <div className={`nav-item ${view==='content'?'active':''}`} onClick={() => handleNavClick('content')}><i class="fa-solid fa-layer-group"></i> <span>Sider & Tools</span></div>
+                            <div className={`nav-item ${view==='news'?'active':''}`} onClick={() => handleNavClick('news')}><i className="fa-regular fa-newspaper"></i> <span>Nyheder</span></div>
+                            <div className={`nav-item ${view==='events'?'active':''}`} onClick={() => handleNavClick('events')}><i className="fa-solid fa-calendar-days"></i> <span>Koncerter</span></div>
+                            <div className={`nav-item ${view==='members'?'active':''}`} onClick={() => handleNavClick('members')}><i className="fa-solid fa-users"></i> <span>Musikere</span></div>
+                            <div className="category-title" style={{ marginTop: 20 }}>Struktur</div>
+                            <div className={`nav-item ${view==='content'?'active':''}`} onClick={() => handleNavClick('content')}><i className="fa-solid fa-layer-group"></i> <span>Sider & Tools</span></div>
                         </div>
                         <div className="brand-footer">
                             <div>By</div>
@@ -769,12 +769,12 @@
                         <div className="page-container">
                             <div className="list-header">
                                 <div>
-                                        <div id="section-title" style="font-size:2rem; font-family:'Cormorant Garamond'; color:#1A1C1B;">Nyheder</div>
-                                        <div id="section-meta" style="color:#666; font-size:0.8rem;">Rediger indhold</div>
+                                        <div id="section-title" style={{ fontSize: '2rem', fontFamily: 'Cormorant Garamond', color: '#1A1C1B' }}>Nyheder</div>
+                                        <div id="section-meta" style={{ color: '#666', fontSize: '0.8rem' }}>Rediger indhold</div>
                                 </div>
-                                <div style="display:flex; gap:10px;">
-                                    <button id="new-btn" className="btn btn-primary"><i class="fa-solid fa-plus"></i> Ny</button>
-                                    <button id="refresh-btn" className="btn btn-outline"><i class="fa-solid fa-rotate-right"></i></button>
+                                <div style={{ display: 'flex', gap: 10 }}>
+                                    <button id="new-btn" className="btn btn-primary"><i className="fa-solid fa-plus"></i> Ny</button>
+                                    <button id="refresh-btn" className="btn btn-outline"><i className="fa-solid fa-rotate-right"></i></button>
                                 </div>
                             </div>
                             <div id="list" className="list"></div>
@@ -783,10 +783,10 @@
                     <aside className="sidebar-right" id="sidebar-right" ref={inspectorRef}>
                         <div className="inspector-header">
                             <span id="inspector-title">Egenskaber</span>
-                            <button id="sign-out-btn" onClick={handleSignOut} style="background:none; border:none; color:var(--textMuted); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
+                            <button id="sign-out-btn" onClick={handleSignOut} style={{ background: 'none', border: 'none', color: 'var(--textMuted)', cursor: 'pointer' }}><i className="fa-solid fa-right-from-bracket"></i></button>
                         </div>
-                        <div className="inspector-content" id="inspector-body" style="display:none;"></div>
-                        <div id="empty-state" style="padding:40px; text-align:center; color:var(--textMuted);">
+                        <div className="inspector-content" id="inspector-body" style={{ display: 'none' }}></div>
+                        <div id="empty-state" style={{ padding: 40, textAlign: 'center', color: 'var(--textMuted)' }}>
                             <p>Vælg et element til venstre.</p>
                         </div>
                     </aside>
