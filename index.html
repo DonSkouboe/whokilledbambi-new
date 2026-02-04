@@ -281,6 +281,18 @@
         credit: "By StageReadyWeb"
       };
 
+      const mergePlusContent = (source) => {
+        const safe = source || {};
+        const merged = { ...DEFAULT_PLUS_CONTENT, ...safe };
+        merged.sections = (Array.isArray(safe.sections) && safe.sections.length)
+          ? safe.sections
+          : DEFAULT_PLUS_CONTENT.sections;
+        merged.info_paragraphs = (Array.isArray(safe.info_paragraphs) && safe.info_paragraphs.length)
+          ? safe.info_paragraphs
+          : DEFAULT_PLUS_CONTENT.info_paragraphs;
+        return merged;
+      };
+
       // --- COMPONENTS ---
       const SEOManager = ({ view, content }) => {
         useEffect(() => {
@@ -556,6 +568,88 @@
         </section>
       );
 
+
+
+      const EditorialBlock = ({ heading, body, align = 'left' }) => (
+        <section className={`py-16 px-6 md:px-12 max-w-4xl mx-auto ${align === 'center' ? 'text-center' : 'text-left'}`}>
+          {heading && <h3 className="text-3xl md:text-4xl font-serif text-wkbInk mb-6">{heading}</h3>}
+          <div className="text-lg md:text-xl text-wkbInk/80 leading-relaxed">
+            {body ? <RichTextRenderer html={body} /> : null}
+          </div>
+        </section>
+      );
+
+      const MediaTextBlock = ({ title, body, media_url, media_aspect, credit, layout = 'image-left', isVideo = false }) => (
+        <section className="py-20 px-6 md:px-12 max-w-6xl mx-auto">
+          <div className={`grid md:grid-cols-2 gap-10 items-center ${layout === 'image-right' ? 'md:flex-row-reverse' : ''}`}>
+            <div className="order-2 md:order-1">
+              <h3 className="text-4xl md:text-5xl font-serif text-wkbInk mb-6">{title}</h3>
+              <div className="text-lg md:text-xl text-wkbInk/80 leading-relaxed">{body ? <RichTextRenderer html={body} /> : null}</div>
+            </div>
+            <div className="order-1 md:order-2">
+              <div className={`overflow-hidden rounded-sm bg-[#E0DCD5] ${aspectClass(media_aspect)}`}>
+                {isVideo ? (
+                  <video src={media_url} controls className="w-full h-full object-cover" />
+                ) : (
+                  <img src={media_url} alt={title} className="w-full h-full object-cover" />
+                )}
+              </div>
+              {credit && <div className="text-xs uppercase tracking-widest text-wkbInk/50 mt-3">{credit}</div>}
+            </div>
+          </div>
+        </section>
+      );
+
+      const QuoteBlock = ({ quote, author, rating }) => (
+        <section className="py-20 px-6 md:px-12 max-w-4xl mx-auto">
+          <blockquote className="text-2xl md:text-3xl font-serif italic text-wkbInk/90 leading-relaxed mb-6">{quote}</blockquote>
+          <div className="flex items-center gap-4">
+            <div className="text-xs font-bold uppercase tracking-widest text-wkbInk/60">{author}</div>
+            {rating ? <div className="text-wkbCoral tracking-widest text-lg">{'★'.repeat(rating)}</div> : null}
+          </div>
+        </section>
+      );
+
+      const GridBlock = ({ title, c1_title, c1_body, c2_title, c2_body, c3_title, c3_body }) => (
+        <section className="py-20 px-6 md:px-12 max-w-6xl mx-auto">
+          {title && <h3 className="text-4xl font-serif text-wkbInk mb-10">{title}</h3>}
+          <div className="grid md:grid-cols-3 gap-8">
+            {[{t:c1_title,b:c1_body},{t:c2_title,b:c2_body},{t:c3_title,b:c3_body}].map((c, i) => (
+              <div key={i} className="border border-wkbInk/10 bg-white/40 p-6 rounded-sm">
+                <div className="text-xl font-serif text-wkbInk mb-3">{c.t}</div>
+                <div className="text-sm text-wkbInk/70 leading-relaxed">{c.b}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+
+      const GalleryBlock = ({ title, g1_url, g1_credit, g2_url, g2_credit, g3_url, g3_credit }) => (
+        <section className="py-20 px-6 md:px-12 max-w-6xl mx-auto">
+          {title && <h3 className="text-4xl font-serif text-wkbInk mb-10">{title}</h3>}
+          <div className="grid md:grid-cols-3 gap-6">
+            {[{u:g1_url,c:g1_credit},{u:g2_url,c:g2_credit},{u:g3_url,c:g3_credit}].map((g, i) => (
+              <div key={i}>
+                <div className="overflow-hidden rounded-sm bg-[#E0DCD5] aspect-[4/3]">
+                  {g.u && <img src={g.u} className="w-full h-full object-cover" />}
+                </div>
+                {g.c && <div className="text-xs uppercase tracking-widest text-wkbInk/50 mt-3">{g.c}</div>}
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+
+      const CtaBlock = ({ title, body, button_label, button_url }) => (
+        <section className="py-20 px-6 md:px-12 max-w-4xl mx-auto text-center">
+          {title && <h3 className="text-4xl font-serif text-wkbInk mb-6">{title}</h3>}
+          <div className="text-lg md:text-xl text-wkbInk/80 leading-relaxed mb-8">{body ? <RichTextRenderer html={body} /> : null}</div>
+          {button_label && <a href={button_url || '#'} className="inline-flex items-center gap-3 px-8 py-3 border border-wkbInk/20 rounded-full hover:border-wkbInk transition-all duration-500 bg-wkbPaper/50 backdrop-blur-sm">
+            <span className="text-xs uppercase tracking-widest">{button_label}</span>
+          </a>}
+        </section>
+      );
+
       const BuilderPage = ({ page, members, plusContent }) => {
         const blocks = page?.data?.blocks || [];
         return (
@@ -569,14 +663,13 @@
                   </div>
                 );
               }
-              if (type === 'intro') return <IntroBlock key={idx} {...block} />;
-              if (type === 'members') return <MembersBlock key={idx} members={members} />;
-              if (type === 'plus') return <PlusSection key={idx} plusContent={plusContent} />;
-              if (type === 'news') return <NewsSection key={idx} limit={block.limit} />;
-              if (type === 'calendar') return <CalendarSection key={idx} />;
-              if (type === 'text') return <TextBlock key={idx} heading={block.heading} body={block.body} />;
-              if (type === 'image') return <ImageBlock key={idx} {...block} />;
-              if (type === 'contact') return <ContactBlock key={idx} title={block.title} />;
+              if (type === 'editorial') return <EditorialBlock key={idx} heading={block.heading} body={block.body} align={block.align} />;
+              if (type === 'image_text') return <MediaTextBlock key={idx} title={block.title} body={block.body} media_url={block.media_url} media_aspect={block.media_aspect} credit={block.credit} layout={block.layout} />;
+              if (type === 'video_text') return <MediaTextBlock key={idx} title={block.title} body={block.body} media_url={block.media_url} media_aspect={block.media_aspect} credit={block.credit} layout={block.layout} isVideo />;
+              if (type === 'quote') return <QuoteBlock key={idx} quote={block.quote} author={block.author} rating={block.rating} />;
+              if (type === 'grid') return <GridBlock key={idx} title={block.title} c1_title={block.c1_title} c1_body={block.c1_body} c2_title={block.c2_title} c2_body={block.c2_body} c3_title={block.c3_title} c3_body={block.c3_body} />;
+              if (type === 'gallery') return <GalleryBlock key={idx} title={block.title} g1_url={block.g1_url} g1_credit={block.g1_credit} g2_url={block.g2_url} g2_credit={block.g2_credit} g3_url={block.g3_url} g3_credit={block.g3_credit} />;
+              if (type === 'cta') return <CtaBlock key={idx} title={block.title} body={block.body} button_label={block.button_label} button_url={block.button_url} />;
               return null;
             })}
           </div>
@@ -1198,7 +1291,7 @@
 
         const homeContent = contentPages.home || DEFAULT_HOME_CONTENT;
         const aboutContent = contentPages.about || DEFAULT_ABOUT_CONTENT;
-        const plusContent = contentPages.plus || DEFAULT_PLUS_CONTENT;
+        const plusContent = mergePlusContent(contentPages.plus);
         const footerContent = contentPages.footer || DEFAULT_FOOTER_CONTENT;
         const currentPage = (pages || []).find((p) => p.slug === view);
 

@@ -1031,7 +1031,8 @@
                     subtitle = item.published_at ? new Date(item.published_at).toLocaleDateString('da-DK') : 'Ingen dato';
                     metaContent = `<span class="pill">Nyhed</span>`;
                 } else if (state.section === 'events') {
-                    thumbHtml = `<div class="item-thumb" style="background:#F2EFE9; color:var(--wkbCoral);">${new Date(item.event_date).getDate()}</div>`;
+                    const date = item.event_date ? new Date(item.event_date) : null;
+                    thumbHtml = `<div class="item-thumb" style="background:#F2EFE9; color:var(--wkbCoral);">${date ? date.getDate() : '-'}</div>`;
                     subtitle = item.location || 'Lokation mangler';
                     metaContent = `<span class="pill coral" style="background:${item.theme === 'text-wkbCoral' ? '#ffe5e0' : '#F2EFE9'}; color:${item.theme === 'text-wkbCoral' ? 'var(--wkbCoral)' : '#666'}">${item.title ? 'Billetter' : 'Info'}</span>`;
                 } else if (state.section === 'members') {
@@ -1043,237 +1044,112 @@
                     subtitle = 'Samarbejde';
                     metaContent = `<span class="pill">#${item.sort_order ?? 0}</span>`;
                 } else if (state.section === 'pages') {
-                    thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-layer-group"></i></div>`;
-                    subtitle = item.slug || 'Side';
-                    metaContent = `<span class="pill">${(item.data && item.data.show_in_nav) ? 'Menu' : 'Skjult'}</span>`;
-                } else if (state.section === 'footer') {
-                    thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-share-nodes"></i></div>`;
-                    subtitle = 'Footer links';
-                    metaContent = `<span class="pill">Socials</span>`;
-                } else {
-                    metaContent = `<span class="pill">JSON</span>`;
+                    const show = item.data?.show_in_nav;
+                    subtitle = `/${item.slug || ''}`;
+                    metaContent = `<span class="pill">${show ? 'Menu' : 'Skjult'}</span>`;
+                } else if (state.section === 'content' || state.section === 'footer') {
+                    subtitle = item.slug || '';
+                    metaContent = `<span class="pill">Indhold</span>`;
                 }
 
                 return `
-                    <div class="list-item ${isSelected}" data-id="${item.id}">
+                    <div class="list-item ${isSelected}" data-id="${item.id || ''}">
                         ${thumbHtml}
                         <div class="item-content">
                             <div class="item-title">${title}</div>
                             <div class="item-subtitle">${subtitle}</div>
                         </div>
-                        <div class="item-meta">
-                            ${metaContent}
-                            <i class="fa-solid fa-chevron-right" style="color:#ccc; font-size:0.8rem;"></i>
-                        </div>
+                        <div class="item-meta">${metaContent}</div>
                     </div>
                 `;
             }).join('');
 
             listEl.querySelectorAll('.list-item').forEach((el) => {
-                el.addEventListener('click', () => {
-                    const id = el.dataset.id;
-                    const item = state.items.find((entry) => entry.id === id);
-                    selectItem(item);
-                });
+                const id = el.getAttribute('data-id');
+                const item = state.items.find((i) => `${i.id}` === `${id}`);
+                if (item) el.addEventListener('click', () => selectItem(item));
             });
         };
 
-        // --- FORMS ---
         const selectItem = (item) => {
             state.selected = item;
-            inspectorTitle.textContent = item?.title || item?.name || 'Rediger';
+            inspectorTitle.textContent = item.title || item.name || item.slug || 'Rediger';
             inspectorBody.style.display = 'block';
             emptyState.style.display = 'none';
-            renderForm();
-            
-            // Mobile behavior: slide up inspector
-            if(isMobile()) {
-                sidebarRight.classList.add('mobile-open');
-                mobileCloseBtn.style.display = 'block';
-                // Scroll inspector to top
-                inspectorBody.scrollTop = 0;
-            }
+            renderInspector();
+            if (isMobile()) sidebarRight.classList.add('mobile-open');
         };
 
         const newItem = () => {
+            const base = { _new: true };
             if (state.section === 'pages') {
-                state.selected = { _new: true, title: '', slug: '', data: { page_type: 'page', show_in_nav: true, blocks: [] } };
-            } else {
-                state.selected = { _new: true };
+                base.slug = '';
+                base.title = '';
+                base.data = { page_type: 'page', show_in_nav: true, blocks: [] };
+            } else if (state.section === 'content' || state.section === 'footer') {
+                base.slug = '';
+                base.title = '';
+                base.data = {};
             }
-            inspectorTitle.textContent = 'Opret nyt';
+            state.selected = base;
+            inspectorTitle.textContent = 'Opret ny';
             inspectorBody.style.display = 'block';
             emptyState.style.display = 'none';
-            renderForm();
-             if(isMobile()) {
-                sidebarRight.classList.add('mobile-open');
-                mobileCloseBtn.style.display = 'block';
-                inspectorBody.scrollTop = 0;
-            }
+            renderInspector();
+            if (isMobile()) sidebarRight.classList.add('mobile-open');
         };
 
-        const uploadImage = async (file) => {
-            const fileExt = file.name.split('.').pop();
-            const filePath = `${crypto.randomUUID()}.${fileExt}`;
-            const { error } = await supabaseClient.storage.from('media').upload(filePath, file, { upsert: true });
-            if (error) throw error;
-            const { data } = supabaseClient.storage.from('media').getPublicUrl(filePath);
-            return { url: data.publicUrl, path: filePath };
-        };
-
-        const uploadMedia = async (file) => {
-            const fileExt = file.name.split('.').pop();
-            const filePath = `${crypto.randomUUID()}.${fileExt}`;
-            const { error } = await supabaseClient.storage.from('media').upload(filePath, file, { upsert: true });
-            if (error) throw error;
-            const { data } = await supabaseClient.storage.from('media').getPublicUrl(filePath);
-            return { url: data.publicUrl, path: filePath };
-        };
-
-
-
-        const parseImageMeta = (url) => {
-            if (!url) return { src: '', fx: '', fy: '', z: '' };
-            const [base, hash] = url.split('#');
-            if (!hash) return { src: base, fx: '', fy: '', z: '' };
-            const raw = hash.startsWith('wkb=') ? hash.slice(4) : (hash.startsWith('focus=') ? hash.slice(6) : '');
-            if (!raw) return { src: base, fx: '', fy: '', z: '' };
-            const parts = raw.split(',').map((p) => p.trim());
-            return {
-                src: base,
-                fx: parts[0] || '',
-                fy: parts[1] || '',
-                z: parts[2] || ''
-            };
-        };
-
-        const clampNumber = (value, min, max) => {
-            const n = parseInt(value, 10);
-            if (Number.isNaN(n)) return '';
-            return Math.min(max, Math.max(min, n));
-        };
-
-        const buildImageUrl = (base, fx, fy, z) => {
-            const cleanBase = (base || '').split('#')[0].trim();
-            if (!cleanBase) return '';
-            const fxn = fx == '' ? '' : clampNumber(fx, 0, 100);
-            const fyn = fy == '' ? '' : clampNumber(fy, 0, 100);
-            const zn = z == '' ? '' : clampNumber(z, 100, 160);
-            if (fxn == '' && fyn == '' && zn == '') return cleanBase;
-            const finalFx = fxn == '' ? 50 : fxn;
-            const finalFy = fyn == '' ? 50 : fyn;
-            const finalZ = zn == '' ? 100 : zn;
-            return `${cleanBase}#wkb=${finalFx},${finalFy},${finalZ}`;
-        };
-
-
-        const readPlusFormData = () => {
-            const infoParagraphsRaw = document.getElementById('plus-info-paragraphs')?.value || '';
-            const infoParagraphs = infoParagraphsRaw
-                .split('\n')
-                .map((s) => s.trim())
-                .filter(Boolean);
-
-            const sections = [];
-            inspectorBody.querySelectorAll('[data-plus-section]').forEach((sectionEl) => {
-                const index = sectionEl.dataset.index;
-                const get = (field) => sectionEl.querySelector(`[data-field="${field}"]`)?.value || '';
-                const ratingRaw = get('rating');
-                const focusXRaw = get('image_focus_x');
-                const focusYRaw = get('image_focus_y');
-                const scaleRaw = get('image_scale');
-                const aspectRaw = get('image_aspect');
-                sections.push({
-                    id: get('id') || `section-${index}`,
-                    label: get('label'),
-                    title: get('title'),
-                    image_url: get('image_url'),
-                    image_credit: get('image_credit'),
-                    video_url: get('video_url'),
-                    quote: get('quote'),
-                    quote_author: get('quote_author'),
-                    rating: ratingRaw ? parseInt(ratingRaw, 10) : undefined,
-                    layout: get('layout') || 'image-left',
-                    image_focus_x: focusXRaw ? parseInt(focusXRaw, 10) : undefined,
-                    image_focus_y: focusYRaw ? parseInt(focusYRaw, 10) : undefined,
-                    image_scale: scaleRaw ? parseInt(scaleRaw, 10) : undefined,
-                    image_aspect: aspectRaw || undefined
-                });
-            });
-
-            return {
-                header_title: document.getElementById('plus-header-title')?.value?.trim() || '',
-                header_subtitle: document.getElementById('plus-header-subtitle')?.value?.trim() || '',
-                sections,
-                info_title: document.getElementById('plus-info-title')?.value?.trim() || '',
-                info_paragraphs: infoParagraphs,
-                info_note: document.getElementById('plus-info-note')?.value || ''
-            };
-        };
-
-        const renderForm = () => {
+        const renderInspector = () => {
             const item = state.selected || {};
-            let html = '';
-            let contentSlug = '';
+            if (!item) return;
 
-            const commonFields = () => `
-                <div class="form-section">
-                    <label class="form-label">Titel</label>
-                    <input id="field-title" class="form-input" type="text" value="${item.title || ''}" placeholder="Indtast titel...">
-                </div>
-            `;
+            let html = '';
+            let contentSlug = item.slug || '';
 
             if (state.section === 'news') {
-                const imageMeta = parseImageMeta(item.image_url || '');
-                                html += `
-                    ${commonFields()}
+                html += `
                     <div class="form-section">
-                        <label class="form-label">Udgivelsesdato</label>
+                        <label class="form-label">Titel</label>
+                        <input id="field-title" class="form-input" type="text" value="${item.title || ''}">
+                    </div>
+                    <div class="form-section">
+                        <label class="form-label">Dato</label>
                         <input id="field-date" class="form-input" type="datetime-local" value="${formatDateInput(item.published_at)}">
                     </div>
                     <div class="form-section">
-                        <label class="form-label">Billede</label>
+                        <label class="form-label">Billede URL</label>
                         <div style="display:flex; gap:8px; align-items:center;">
-                            <input id="field-image" class="form-input" type="text" value="${imageMeta.src || ''}" placeholder="https://..." style="flex:1;">
-                            <button class="icon-btn" data-action="open-media" data-media-target="field-image" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
+                            <input id="field-image" class="form-input" type="text" value="${item.image_url || ''}" style="flex:1;">
+                            <button class="icon-btn" data-action="open-media" data-media-field="field-image" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
                         </div>
-                        <div style="margin-top:8px; font-size:0.8rem; color:var(--textMuted);">Eller upload ny:</div>
-                        <input id="field-upload" class="form-input" type="file" accept="image/*" style="margin-top:4px;">
+                        <input id="field-upload" class="form-input" type="file" accept="image/*" data-upload-target="field-image" style="margin-top:6px;">
                     </div>
-
                     <div class="form-section">
-                        <label class="form-label">Billedfokus (X/Y)</label>
+                        <label class="form-label">Billede fokus (X/Y)</label>
                         <div style="display:flex; gap:8px; margin-bottom:8px;">
-                            <input id="field-image-focus-x" class="form-input" type="number" min="0" max="100" value="${imageMeta.fx}" placeholder="X (0-100)">
-                            <input id="field-image-focus-y" class="form-input" type="number" min="0" max="100" value="${imageMeta.fy}" placeholder="Y (0-100)">
+                            <input id="field-image-focus-x" class="form-input" type="number" min="0" max="100" value="${item.image_focus_x ?? ''}" placeholder="X (0-100)">
+                            <input id="field-image-focus-y" class="form-input" type="number" min="0" max="100" value="${item.image_focus_y ?? ''}" placeholder="Y (0-100)">
                         </div>
-                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                            <button class="icon-btn" data-focus-target="field-image-focus-x" data-value="0">Venstre</button>
-                            <button class="icon-btn" data-focus-target="field-image-focus-x" data-value="50">Center</button>
-                            <button class="icon-btn" data-focus-target="field-image-focus-x" data-value="100">Højre</button>
-                            <button class="icon-btn" data-focus-target="field-image-focus-y" data-value="0">Top</button>
-                            <button class="icon-btn" data-focus-target="field-image-focus-y" data-value="50">Midt</button>
-                            <button class="icon-btn" data-focus-target="field-image-focus-y" data-value="100">Bund</button>
-                        </div>
-                    </div>
-                    <div class="form-section">
                         <label class="form-label">Billede zoom (%)</label>
-                        <input id="field-image-scale" class="form-input" type="number" min="100" max="160" value="${imageMeta.z}" placeholder="100">
+                        <input id="field-image-scale" class="form-input" type="number" min="100" max="160" value="${item.image_scale ?? ''}" placeholder="100">
                     </div>
                     <div class="form-section">
-                        <label class="form-label">Brødtekst</label>
-                        <textarea id="field-body" class="form-textarea" placeholder="Skriv nyheden her...">${item.body || ''}</textarea>
+                        <label class="form-label">Tekst</label>
+                        <textarea id="field-body" class="form-textarea">${item.body || ''}</textarea>
                     </div>
                 `;
             } else if (state.section === 'events') {
                 html += `
-                    ${commonFields()}
                     <div class="form-section">
-                        <label class="form-label">Undertitel / Support</label>
+                        <label class="form-label">Titel</label>
+                        <input id="field-title" class="form-input" type="text" value="${item.title || ''}">
+                    </div>
+                    <div class="form-section">
+                        <label class="form-label">Subtitle</label>
                         <input id="field-subtitle" class="form-input" type="text" value="${item.subtitle || ''}">
                     </div>
                     <div class="form-section">
-                        <label class="form-label">Dato og tid</label>
+                        <label class="form-label">Dato</label>
                         <input id="field-date" class="form-input" type="datetime-local" value="${formatDateInput(item.event_date)}">
                     </div>
                     <div class="form-section">
@@ -1285,51 +1161,39 @@
                         <input id="field-ticket" class="form-input" type="text" value="${item.ticket_link || ''}">
                     </div>
                     <div class="form-section">
-                        <label class="form-label">Temafarve</label>
+                        <label class="form-label">Tema</label>
                         <select id="field-theme" class="form-select">
-                            <option value="text-wkbInk" ${item.theme === 'text-wkbInk' ? 'selected' : ''}>Sort Ink</option>
-                            <option value="text-wkbCoral" ${item.theme === 'text-wkbCoral' ? 'selected' : ''}>Coral (Fremhævet)</option>
-                            <option value="text-wkbSage" ${item.theme === 'text-wkbSage' ? 'selected' : ''}>Sage Grøn</option>
+                            <option value="text-wkbInk" ${item.theme === 'text-wkbInk' || !item.theme ? 'selected' : ''}>Sort</option>
+                            <option value="text-wkbCoral" ${item.theme === 'text-wkbCoral' ? 'selected' : ''}>Coral</option>
                         </select>
                     </div>
                 `;
             } else if (state.section === 'members') {
-                const imageMeta = parseImageMeta(item.image_url || '');
                 html += `
                     <div class="form-section">
                         <label class="form-label">Navn</label>
                         <input id="field-name" class="form-input" type="text" value="${item.name || ''}">
                     </div>
                     <div class="form-section">
-                        <label class="form-label">Instrument / Rolle</label>
+                        <label class="form-label">Instrument</label>
                         <input id="field-instrument" class="form-input" type="text" value="${item.instrument || ''}">
                     </div>
                     <div class="form-section">
                         <label class="form-label">Billede URL</label>
                         <div style="display:flex; gap:8px; align-items:center;">
-                            <input id="field-image" class="form-input" type="text" value="${imageMeta.src || ''}" style="flex:1;">
-                            <button class="icon-btn" data-action="open-media" data-media-target="field-image" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
+                            <input id="field-image" class="form-input" type="text" value="${item.image_url || ''}" style="flex:1;">
+                            <button class="icon-btn" data-action="open-media" data-media-field="field-image" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
                         </div>
-                        <input id="field-upload" class="form-input" type="file" accept="image/*" style="margin-top:4px;">
+                        <input id="field-upload" class="form-input" type="file" accept="image/*" data-upload-target="field-image" style="margin-top:6px;">
                     </div>
                     <div class="form-section">
-                        <label class="form-label">Billedfokus (X/Y)</label>
+                        <label class="form-label">Billede fokus (X/Y)</label>
                         <div style="display:flex; gap:8px; margin-bottom:8px;">
-                            <input id="field-image-focus-x" class="form-input" type="number" min="0" max="100" value="${imageMeta.fx}" placeholder="X (0-100)">
-                            <input id="field-image-focus-y" class="form-input" type="number" min="0" max="100" value="${imageMeta.fy}" placeholder="Y (0-100)">
+                            <input id="field-image-focus-x" class="form-input" type="number" min="0" max="100" value="${item.image_focus_x ?? ''}" placeholder="X (0-100)">
+                            <input id="field-image-focus-y" class="form-input" type="number" min="0" max="100" value="${item.image_focus_y ?? ''}" placeholder="Y (0-100)">
                         </div>
-                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                            <button class="icon-btn" data-focus-target="field-image-focus-x" data-value="0">Venstre</button>
-                            <button class="icon-btn" data-focus-target="field-image-focus-x" data-value="50">Center</button>
-                            <button class="icon-btn" data-focus-target="field-image-focus-x" data-value="100">Højre</button>
-                            <button class="icon-btn" data-focus-target="field-image-focus-y" data-value="0">Top</button>
-                            <button class="icon-btn" data-focus-target="field-image-focus-y" data-value="50">Midt</button>
-                            <button class="icon-btn" data-focus-target="field-image-focus-y" data-value="100">Bund</button>
-                        </div>
-                    </div>
-                    <div class="form-section">
                         <label class="form-label">Billede zoom (%)</label>
-                        <input id="field-image-scale" class="form-input" type="number" min="100" max="160" value="${imageMeta.z}" placeholder="100">
+                        <input id="field-image-scale" class="form-input" type="number" min="100" max="160" value="${item.image_scale ?? ''}" placeholder="100">
                     </div>
                     <div class="form-section">
                         <label class="form-label">Sortering</label>
@@ -1337,7 +1201,7 @@
                     </div>
                 `;
             } else if (state.section === 'collaborators') {
-                 html += `
+                html += `
                     <div class="form-section">
                         <label class="form-label">Navn</label>
                         <input id="field-name" class="form-input" type="text" value="${item.name || ''}">
@@ -1367,18 +1231,17 @@
                         </select>
                     </div>
                     <div class="form-section">
-                        <label class="form-label">Tilføj blok</label>
+                        <label class="form-label">Tilføj boks</label>
                         <div style="display:flex; gap:8px;">
                             <select id="block-type" class="form-select" style="flex:1;">
-                                <option value="hero">Hero / Forside</option>
-                                <option value="intro">Intro tekst</option>
-                                <option value="members">Musikerne grid</option>
-                                <option value="plus">WKB+ sektion</option>
-                                <option value="news">Nyheder liste</option>
-                                <option value="calendar">Koncerter liste</option>
-                                <option value="text">Tekstblok</option>
-                                <option value="image">Billedeblok</option>
-                                <option value="contact">Kontakt</option>
+                                <option value="hero">Hero</option>
+                                <option value="editorial">Editorial tekst</option>
+                                <option value="image_text">Billede + tekst</option>
+                                <option value="video_text">Video + tekst</option>
+                                <option value="quote">Citat</option>
+                                <option value="grid">Grid (kort)</option>
+                                <option value="gallery">Gallery</option>
+                                <option value="cta">Call-to-action</option>
                             </select>
                             <button class="btn btn-primary" id="add-block-btn"><i class="fa-solid fa-plus"></i> Tilføj</button>
                         </div>
@@ -1386,11 +1249,11 @@
                 `;
 
                 blocks.forEach((block, idx) => {
-                    const type = block.type || 'text';
+                    const type = block.type || 'editorial';
                     html += `
-                        <div class="form-section" data-page-block data-index="${idx}">
+                        <div class="form-section" data-page-block data-index="${idx}" draggable="true">
                             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                                <label class="form-label" style="margin-bottom:0;">Blok ${idx + 1} • ${type}</label>
+                                <label class="form-label" style="margin-bottom:0;">Boks ${idx + 1} • ${type}</label>
                                 <div style="display:flex; gap:6px;">
                                     <button class="icon-btn" data-action="page-move-up" data-index="${idx}" title="Flyt op"><i class="fa-solid fa-chevron-up"></i></button>
                                     <button class="icon-btn" data-action="page-move-down" data-index="${idx}" title="Flyt ned"><i class="fa-solid fa-chevron-down"></i></button>
@@ -1414,96 +1277,114 @@
                             <label class="form-label">CTA tekst</label>
                             <input class="form-input" data-field="cta_label" type="text" value="${block.cta_label || ''}">
                         `;
-                    } else if (type === 'intro') {
-                        html += `
-                            <label class="form-label">Titel (normal)</label>
-                            <input class="form-input" data-field="intro_title_main" type="text" value="${block.intro_title_main || ''}">
-                            <div style="height:10px;"></div>
-                            <label class="form-label">Titel (fremhævet)</label>
-                            <input class="form-input" data-field="intro_title_emphasis" type="text" value="${block.intro_title_emphasis || ''}">
-                            <div style="height:10px;"></div>
-                            <label class="form-label">Tekst</label>
-                            <textarea class="form-textarea" data-field="intro_text">${block.intro_text || ''}</textarea>
-                        `;
-                    } else if (type === 'members') {
-                        html += `
-                            <label class="form-label">Vis medlemmer</label>
-                            <select class="form-select" data-field="use_members">
-                                <option value="yes" ${block.use_members !== false ? 'selected' : ''}>Ja</option>
-                                <option value="no" ${block.use_members === false ? 'selected' : ''}>Nej</option>
-                            </select>
-                        `;
-                    } else if (type === 'plus') {
-                        html += `
-                            <label class="form-label">Vis WKB+ indhold</label>
-                            <select class="form-select" data-field="use_plus">
-                                <option value="yes" ${block.use_plus !== false ? 'selected' : ''}>Ja</option>
-                                <option value="no" ${block.use_plus === false ? 'selected' : ''}>Nej</option>
-                            </select>
-                        `;
-                    } else if (type === 'news') {
-                        html += `
-                            <label class="form-label">Antal nyheder</label>
-                            <input class="form-input" data-field="limit" type="number" value="${block.limit || 6}">
-                        `;
-                    } else if (type === 'calendar') {
-                        html += `
-                            <label class="form-label">Vis kalender</label>
-                            <select class="form-select" data-field="use_calendar">
-                                <option value="yes" ${block.use_calendar !== false ? 'selected' : ''}>Ja</option>
-                                <option value="no" ${block.use_calendar === false ? 'selected' : ''}>Nej</option>
-                            </select>
-                        `;
-                    } else if (type === 'text') {
+                    } else if (type === 'editorial') {
                         html += `
                             <label class="form-label">Overskrift</label>
                             <input class="form-input" data-field="heading" type="text" value="${block.heading || ''}">
                             <div style="height:10px;"></div>
                             <label class="form-label">Tekst</label>
                             <textarea class="form-textarea" data-field="body">${block.body || ''}</textarea>
-                        `;
-                    } else if (type === 'image') {
-                        html += `
-                            <label class="form-label">Billede URL</label>
-                            <div style="display:flex; gap:8px; align-items:center;">
-                                <input class="form-input" data-field="image_url" type="text" value="${block.image_url || ''}" style="flex:1;">
-                                <button class="icon-btn" data-action="open-media" data-media-field="image_url" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
-                            </div>
-                            <input class="form-input" type="file" accept="image/*" data-upload-target="image_url" style="margin-top:6px;">
                             <div style="height:10px;"></div>
-                            <label class="form-label">Format</label>
-                            <select class="form-select" data-field="image_aspect">
-                                <option value="4:3" ${block.image_aspect === '4:3' || !block.image_aspect ? 'selected' : ''}>4:3</option>
-                                <option value="16:9" ${block.image_aspect === '16:9' ? 'selected' : ''}>16:9</option>
-                                <option value="21:9" ${block.image_aspect === '21:9' ? 'selected' : ''}>21:9</option>
-                                <option value="3:4" ${block.image_aspect === '3:4' ? 'selected' : ''}>3:4</option>
-                                <option value="1:1" ${block.image_aspect === '1:1' ? 'selected' : ''}>1:1</option>
+                            <label class="form-label">Align</label>
+                            <select class="form-select" data-field="align">
+                                <option value="left" ${block.align === 'left' || !block.align ? 'selected' : ''}>Venstre</option>
+                                <option value="center" ${block.align === 'center' ? 'selected' : ''}>Center</option>
+                            </select>
+                        `;
+                    } else if (type === 'image_text' || type === 'video_text') {
+                        const isVideo = type === 'video_text';
+                        html += `
+                            <label class="form-label">Layout</label>
+                            <select class="form-select" data-field="layout">
+                                <option value="image-left" ${block.layout === 'image-left' || !block.layout ? 'selected' : ''}>Medie venstre</option>
+                                <option value="image-right" ${block.layout === 'image-right' ? 'selected' : ''}>Medie højre</option>
                             </select>
                             <div style="height:10px;"></div>
-                            <label class="form-label">Billede fokus (X/Y)</label>
-                            <div style="display:flex; gap:8px; margin-bottom:8px;">
-                                <input class="form-input" data-field="image_focus_x" type="number" min="0" max="100" value="${block.image_focus_x ?? ''}" placeholder="X (0-100)">
-                                <input class="form-input" data-field="image_focus_y" type="number" min="0" max="100" value="${block.image_focus_y ?? ''}" placeholder="Y (0-100)">
-                            </div>
-                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_x" data-value="0">Venstre</button>
-                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_x" data-value="50">Center</button>
-                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_x" data-value="100">Højre</button>
-                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_y" data-value="0">Top</button>
-                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_y" data-value="50">Midt</button>
-                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_y" data-value="100">Bund</button>
-                            </div>
+                            <label class="form-label">Titel</label>
+                            <input class="form-input" data-field="title" type="text" value="${block.title || ''}">
                             <div style="height:10px;"></div>
-                            <label class="form-label">Billede zoom (%)</label>
-                            <input class="form-input" data-field="image_scale" type="number" min="100" max="160" value="${block.image_scale ?? ''}" placeholder="100">
+                            <label class="form-label">Tekst</label>
+                            <textarea class="form-textarea" data-field="body">${block.body || ''}</textarea>
                             <div style="height:10px;"></div>
-                            <label class="form-label">Caption</label>
-                            <input class="form-input" data-field="caption" type="text" value="${block.caption || ''}">
+                            <label class="form-label">${isVideo ? 'Video URL' : 'Billede URL'}</label>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input class="form-input" data-field="media_url" type="text" value="${block.media_url || ''}" style="flex:1;">
+                                <button class="icon-btn" data-action="open-media" data-media-field="media_url" title="Vælg eksisterende"><i class="fa-solid fa-photo-film"></i></button>
+                            </div>
+                            <input class="form-input" type="file" accept="${isVideo ? 'video/*' : 'image/*'}" data-upload-target="media_url" style="margin-top:6px;">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Format</label>
+                            <select class="form-select" data-field="media_aspect">
+                                <option value="4:3" ${block.media_aspect === '4:3' || !block.media_aspect ? 'selected' : ''}>4:3</option>
+                                <option value="16:9" ${block.media_aspect === '16:9' ? 'selected' : ''}>16:9</option>
+                                <option value="21:9" ${block.media_aspect === '21:9' ? 'selected' : ''}>21:9</option>
+                                <option value="3:4" ${block.media_aspect === '3:4' ? 'selected' : ''}>3:4</option>
+                                <option value="1:1" ${block.media_aspect === '1:1' ? 'selected' : ''}>1:1</option>
+                            </select>
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Credit</label>
+                            <input class="form-input" data-field="credit" type="text" value="${block.credit || ''}">
                         `;
-                    } else if (type === 'contact') {
+                    } else if (type === 'quote') {
                         html += `
-                            <label class="form-label">Kontakt titel</label>
-                            <input class="form-input" data-field="title" type="text" value="${block.title || 'Kontakt'}">
+                            <label class="form-label">Citat</label>
+                            <textarea class="form-textarea" data-field="quote">${block.quote || ''}</textarea>
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Afsender</label>
+                            <input class="form-input" data-field="author" type="text" value="${block.author || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Rating (1-5)</label>
+                            <input class="form-input" data-field="rating" type="number" min="1" max="5" value="${block.rating || ''}">
+                        `;
+                    } else if (type === 'grid') {
+                        html += `
+                            <label class="form-label">Grid titel</label>
+                            <input class="form-input" data-field="title" type="text" value="${block.title || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Kort 1 titel</label>
+                            <input class="form-input" data-field="c1_title" type="text" value="${block.c1_title || ''}">
+                            <label class="form-label">Kort 1 tekst</label>
+                            <textarea class="form-textarea" data-field="c1_body">${block.c1_body || ''}</textarea>
+                            <label class="form-label">Kort 2 titel</label>
+                            <input class="form-input" data-field="c2_title" type="text" value="${block.c2_title || ''}">
+                            <label class="form-label">Kort 2 tekst</label>
+                            <textarea class="form-textarea" data-field="c2_body">${block.c2_body || ''}</textarea>
+                            <label class="form-label">Kort 3 titel</label>
+                            <input class="form-input" data-field="c3_title" type="text" value="${block.c3_title || ''}">
+                            <label class="form-label">Kort 3 tekst</label>
+                            <textarea class="form-textarea" data-field="c3_body">${block.c3_body || ''}</textarea>
+                        `;
+                    } else if (type === 'gallery') {
+                        html += `
+                            <label class="form-label">Gallery titel</label>
+                            <input class="form-input" data-field="title" type="text" value="${block.title || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Billede 1 URL</label>
+                            <input class="form-input" data-field="g1_url" type="text" value="${block.g1_url || ''}">
+                            <label class="form-label">Billede 1 credit</label>
+                            <input class="form-input" data-field="g1_credit" type="text" value="${block.g1_credit || ''}">
+                            <label class="form-label">Billede 2 URL</label>
+                            <input class="form-input" data-field="g2_url" type="text" value="${block.g2_url || ''}">
+                            <label class="form-label">Billede 2 credit</label>
+                            <input class="form-input" data-field="g2_credit" type="text" value="${block.g2_credit || ''}">
+                            <label class="form-label">Billede 3 URL</label>
+                            <input class="form-input" data-field="g3_url" type="text" value="${block.g3_url || ''}">
+                            <label class="form-label">Billede 3 credit</label>
+                            <input class="form-input" data-field="g3_credit" type="text" value="${block.g3_credit || ''}">
+                        `;
+                    } else if (type === 'cta') {
+                        html += `
+                            <label class="form-label">CTA titel</label>
+                            <input class="form-input" data-field="title" type="text" value="${block.title || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">CTA tekst</label>
+                            <textarea class="form-textarea" data-field="body">${block.body || ''}</textarea>
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Knap label</label>
+                            <input class="form-input" data-field="button_label" type="text" value="${block.button_label || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Knap URL</label>
+                            <input class="form-input" data-field="button_url" type="text" value="${block.button_url || ''}">
                         `;
                     }
 
@@ -1736,53 +1617,68 @@
 
         
 
+        
         const collectPageBlocks = () => {
             const blocks = [];
             inspectorBody.querySelectorAll('[data-page-block]').forEach((blockEl) => {
-                const type = blockEl.querySelector('[data-field="type"]')?.value || 'text';
+                const type = blockEl.querySelector('[data-field="type"]')?.value || 'editorial';
                 const get = (field) => blockEl.querySelector(`[data-field="${field}"]`)?.value || '';
                 const block = { type };
+
                 if (type === 'hero') {
                     block.tagline = get('tagline');
                     block.title_lines = get('title_lines').split(',').map(s => s.trim()).filter(Boolean);
                     block.highlight_index = parseInt(get('highlight_index') || '2', 10);
                     block.cta_label = get('cta_label');
-                } else if (type === 'intro') {
-                    block.intro_title_main = get('intro_title_main');
-                    block.intro_title_emphasis = get('intro_title_emphasis');
-                    block.intro_text = get('intro_text');
-                } else if (type === 'members') {
-                    block.use_members = get('use_members') !== 'no';
-                } else if (type === 'plus') {
-                    block.use_plus = get('use_plus') !== 'no';
-                } else if (type === 'news') {
-                    block.limit = parseInt(get('limit') || '6', 10);
-                } else if (type === 'calendar') {
-                    block.use_calendar = get('use_calendar') !== 'no';
-                } else if (type === 'text') {
+                } else if (type === 'editorial') {
                     block.heading = get('heading');
                     block.body = get('body');
-                } else if (type === 'image') {
-                    block.image_url = get('image_url');
-                    block.image_focus_x = parseInt(get('image_focus_x') || '', 10) || undefined;
-                    block.image_focus_y = parseInt(get('image_focus_y') || '', 10) || undefined;
-                    block.image_scale = parseInt(get('image_scale') || '', 10) || undefined;
-                    block.image_aspect = get('image_aspect') || undefined;
-                    block.caption = get('caption');
-                } else if (type === 'contact') {
+                    block.align = get('align') || 'left';
+                } else if (type === 'image_text' || type === 'video_text') {
+                    block.layout = get('layout') || 'image-left';
                     block.title = get('title');
+                    block.body = get('body');
+                    block.media_url = get('media_url');
+                    block.media_aspect = get('media_aspect') || '4:3';
+                    block.credit = get('credit');
+                } else if (type === 'quote') {
+                    block.quote = get('quote');
+                    block.author = get('author');
+                    block.rating = parseInt(get('rating') || '0', 10) || undefined;
+                } else if (type === 'grid') {
+                    block.title = get('title');
+                    block.c1_title = get('c1_title');
+                    block.c1_body = get('c1_body');
+                    block.c2_title = get('c2_title');
+                    block.c2_body = get('c2_body');
+                    block.c3_title = get('c3_title');
+                    block.c3_body = get('c3_body');
+                } else if (type === 'gallery') {
+                    block.title = get('title');
+                    block.g1_url = get('g1_url');
+                    block.g1_credit = get('g1_credit');
+                    block.g2_url = get('g2_url');
+                    block.g2_credit = get('g2_credit');
+                    block.g3_url = get('g3_url');
+                    block.g3_credit = get('g3_credit');
+                } else if (type === 'cta') {
+                    block.title = get('title');
+                    block.body = get('body');
+                    block.button_label = get('button_label');
+                    block.button_url = get('button_url');
                 }
-                blocks.push(block)
+                blocks.push(block);
             });
             return blocks;
         };
+
 
         const bindPageActions = () => {
             const addBtn = document.getElementById('add-block-btn');
             if (addBtn) {
                 addBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const blockType = document.getElementById('block-type')?.value || 'text';
+                    const blockType = document.getElementById('block-type')?.value || 'editorial';
                     const current = state.selected?.data || {};
                     const blocks = collectPageBlocks();
                     blocks.push({ type: blockType });
@@ -1808,7 +1704,9 @@
                     if (index <= 0) return;
                     const current = state.selected?.data || {};
                     const blocks = collectPageBlocks();
-                    {const tmp = blocks[index-1]; blocks[index-1] = blocks[index]; blocks[index] = tmp;}
+                    const tmp = blocks[index - 1];
+                    blocks[index - 1] = blocks[index];
+                    blocks[index] = tmp;
                     state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
                     renderForm();
                 });
@@ -1820,109 +1718,38 @@
                     const current = state.selected?.data || {};
                     const blocks = collectPageBlocks();
                     if (index >= blocks.length - 1) return;
-                    {const tmp = blocks[index+1]; blocks[index+1] = blocks[index]; blocks[index] = tmp;}
+                    const tmp = blocks[index + 1];
+                    blocks[index + 1] = blocks[index];
+                    blocks[index] = tmp;
                     state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
                     renderForm();
                 });
             });
 
-            inspectorBody.querySelectorAll('[data-action="page-focus"]').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const block = btn.closest('[data-page-block]');
-                    if (!block) return;
-                    const field = btn.dataset.field;
-                    const input = block.querySelector(`[data-field="${field}"]`);
-                    if (input) input.value = btn.dataset.value || '50';
+            // Drag & Drop reorder (desktop)
+            let dragIndex = null;
+            inspectorBody.querySelectorAll('[data-page-block]').forEach((blockEl) => {
+                blockEl.addEventListener('dragstart', () => {
+                    dragIndex = parseInt(blockEl.dataset.index || '0', 10);
                 });
-            });
-        };
-        const bindImageFocusActions = () => {
-            inspectorBody.querySelectorAll('[data-focus-target]').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const targetId = btn.dataset.focusTarget;
-                    const input = targetId ? document.getElementById(targetId) : null;
-                    if (input) input.value = btn.dataset.value || '50';
+                blockEl.addEventListener('dragover', (e) => {
+                    e.preventDefault();
                 });
-            });
-        };
-
-        const mediaModal = document.getElementById('media-library-modal');
-        const mediaList = document.getElementById('media-list');
-        const mediaSearch = document.getElementById('media-search');
-        const mediaClose = document.getElementById('media-close');
-        const mediaRefresh = document.getElementById('media-refresh');
-        let mediaTarget = null;
-        let mediaItems = [];
-
-        const openMediaLibrary = async (target) => {
-            mediaTarget = target;
-            mediaModal.style.display = 'flex';
-            await loadMediaList();
-        };
-
-        const closeMediaLibrary = () => {
-            mediaModal.style.display = 'none';
-            mediaTarget = null;
-        };
-
-        const loadMediaList = async () => {
-            const { data, error } = await supabaseClient.storage
-                .from('media')
-                .list('', { limit: 200, offset: 0, sortBy: { column: 'name', order: 'asc' } });
-            if (error) {
-                console.error(error);
-                mediaList.innerHTML = '<div style="color:#aaa; padding:12px;">Kunne ikke hente filer.</div>';
-                return;
-            }
-            mediaItems = (data || []).filter((f) => !f.name.endsWith('/'));
-            renderMediaList();
-        };
-
-        const renderMediaList = () => {
-            const q = (mediaSearch.value || '').toLowerCase();
-            const items = mediaItems.filter((i) => i.name.toLowerCase().includes(q));
-            if (!items.length) {
-                mediaList.innerHTML = '<div style="color:#aaa; padding:12px;">Ingen filer fundet.</div>';
-                return;
-            }
-            mediaList.innerHTML = items.map((item) => {
-                const url = supabaseClient.storage.from('media').getPublicUrl(item.name).data.publicUrl;
-                const isImage = item.name.match(/\.(png|jpe?g|gif|webp|avif)$/i);
-                const isVideo = item.name.match(/\.(mp4|webm|mov)$/i);
-                const thumb = isImage
-                    ? `<img src="${url}" style="width:100%; height:100px; object-fit:cover; border-radius:4px;">`
-                    : `<div style="height:100px; display:flex; align-items:center; justify-content:center; background:#111; border-radius:4px; color:#777;">${isVideo ? 'VIDEO' : 'FIL'}</div>`;
-                return `
-                    <div class="list-item" data-media-url="${url}" style="display:block;">
-                        ${thumb}
-                        <div style="margin-top:6px; font-size:0.75rem; color:#bbb; word-break:break-all;">${item.name}</div>
-                    </div>
-                `;
-            }).join('');
-
-            mediaList.querySelectorAll('[data-media-url]').forEach((el) => {
-                el.addEventListener('click', () => {
-                    const url = el.getAttribute('data-media-url');
-                    if (!mediaTarget || !url) return;
-                    if (mediaTarget.field) {
-                        const scope = mediaTarget.scope;
-                        const input = scope ? scope.querySelector(`[data-field="${mediaTarget.field}"]`) : null;
-                        if (input) input.value = url;
-                    } else if (mediaTarget.id) {
-                        const input = document.getElementById(mediaTarget.id);
-                        if (input) input.value = url;
-                    }
-                    closeMediaLibrary();
+                blockEl.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const dropIndex = parseInt(blockEl.dataset.index || '0', 10);
+                    if (dragIndex === null || dragIndex === dropIndex) return;
+                    const current = state.selected?.data || {};
+                    const blocks = collectPageBlocks();
+                    const [moved] = blocks.splice(dragIndex, 1);
+                    blocks.splice(dropIndex, 0, moved);
+                    state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
+                    renderForm();
                 });
             });
         };
 
-        mediaClose.addEventListener('click', closeMediaLibrary);
-        mediaModal.addEventListener('click', (e) => { if (e.target === mediaModal) closeMediaLibrary(); });
-        mediaRefresh.addEventListener('click', loadMediaList);
-        mediaSearch.addEventListener('input', renderMediaList);
-
-        const bindUploadFields = () => {
+const bindUploadFields = () => {
             inspectorBody.querySelectorAll('input[type="file"][data-upload-target]').forEach((input) => {
                 input.addEventListener('change', async () => {
                     const file = input.files && input.files[0];
