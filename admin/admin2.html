@@ -2,20 +2,40 @@
 <html lang="da">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WhoKilledBambi CMS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WKB Admin</title>
+    
+    <!-- FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lato:wght@300;400;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     
+    <!-- TAILWIND CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- ICONS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- RICH TEXT EDITOR (Quill) -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+    <!-- REACT -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
-      tailwind = { 
+      tailwind.config = {
+        corePlugins: { preflight: false },
         theme: {
           extend: {
             fontFamily: {
               serif: ['"Cormorant Garamond"', 'serif'],
-              sans: ['"Lato"', 'sans-serif'],
-              mono: ['"Space Grotesk"', 'monospace']
+              sans: ['"Lato"', 'sans-serif']
             },
             colors: {
               wkbPaper: '#F2EFE9',
@@ -27,57 +47,40 @@
         }
       };
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
-        /* --- HARDCODED COLORS --- */
+        /* --- DARK THEME VARIABLES --- */
         :root {
-            --wkbPaper: #F2EFE9;
-            --wkbInk: #1A1C1B;
-            --wkbCoral: #FF6B4A;
-            --wkbSage: #94A388;
-
-            /* UI Theme */
-            --uiBg: #0F1115;       
-            --uiPanel: #1A1D23;    
-            --uiBorder: #2E323B;   
-            --uiHover: #252A33;    
-
-            /* Text */
-            --textMain: #F1F5F9;   
-            --textMuted: #94A3B8;  
+            --uiBg: #0F1115;
+            --uiPanel: #181A1F;
+            --uiBorder: #2E323B;
+            --textMain: #F1F5F9;
+            --textMuted: #94A3B8;
+            --accent: #FF6B4A;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
 
         body {
-            font-family: 'Space Grotesk', sans-serif;
-            background-color: var(--uiBg); 
+            font-family: 'Lato', sans-serif;
+            background-color: var(--uiBg);
             color: var(--textMain);
             height: 100vh;
             display: flex;
             overflow: hidden;
             font-size: 14px;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Scrollbar styling */
+        .hidden { display: none !important; }
+
+        /* --- SCROLLBARS --- */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--uiBg); }
         ::-webkit-scrollbar-thumb { background: var(--uiBorder); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-        .hidden { display: none !important; }
-
-        #app {
-            flex: 1;
-            display: flex;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* --- LEFT SIDEBAR --- */
+        /* --- LAYOUT --- */
         .sidebar-left {
             width: 280px;
             background-color: var(--uiPanel);
@@ -99,10 +102,9 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            flex-shrink: 0; /* Prevent brand from squishing on mobile */
+            font-family: 'Cormorant Garamond', serif;
         }
-        .brand i { color: var(--wkbCoral); }
-        .brand-text { color: white; letter-spacing: -0.5px; }
+        .brand span { color: var(--accent); }
 
         .components-list {
             padding: 24px 16px;
@@ -121,9 +123,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-shrink: 0;
         }
-        .brand-footer span { color: var(--wkbCoral); font-weight: 600; }
+        .brand-footer span { color: var(--accent); font-weight: 600; }
 
         .category-title {
             font-size: 0.7rem;
@@ -148,23 +149,22 @@
             transition: all 0.2s ease;
             color: var(--textMuted);
             font-weight: 500;
-            white-space: nowrap;
         }
 
         .nav-item:hover {
-            background-color: var(--uiHover);
+            background-color: var(--uiBorder);
             color: white;
         }
 
         .nav-item.active {
             background-color: rgba(255, 107, 74, 0.1); 
             border-color: rgba(255, 107, 74, 0.3);
-            color: var(--wkbCoral);
+            color: var(--accent);
         }
         
         .nav-item i { width: 20px; text-align: center; }
 
-        /* --- CENTER: Canvas --- */
+        /* --- CENTER CANVAS --- */
         .canvas-area {
             flex: 1;
             background-color: var(--uiBg);
@@ -175,88 +175,29 @@
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            position: relative;
         }
 
         .page-container {
             width: min(1000px, 100%);
-            background-color: var(--wkbPaper); 
+            background-color: #F2EFE9; 
             min-height: calc(100vh - 80px);
-            color: var(--wkbInk); 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             position: relative;
             padding: 40px;
             border-radius: 2px;
         }
 
+        /* --- LIST ITEMS --- */
         .list-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
             border-bottom: 2px solid #E5E2DB;
             padding-bottom: 16px;
-            gap: 16px; /* Prevent text overlap on small screens */
         }
 
-        .list-title-group h1 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2.5rem;
-            font-weight: 600;
-            color: var(--wkbInk);
-            font-style: italic;
-            line-height: 1.1;
-        }
-        
-        .list-meta {
-            font-size: 0.85rem;
-            color: #666;
-            font-family: 'Lato', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 4px;
-        }
-
-        .toolbar { 
-            display: flex; 
-            gap: 12px; 
-            align-items: center;
-        }
-
-        .btn {
-            background: var(--wkbInk);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 2px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: 0.2s;
-            font-family: 'Lato', sans-serif;
-            letter-spacing: 0.5px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap; /* Don't break text inside button */
-        }
-        .btn:hover { background: #333; transform: translateY(-1px); }
-        
-        .btn-primary { background: var(--wkbCoral); color: white; }
-        .btn-primary:hover { background: #e05536; }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #ccc;
-            color: var(--wkbInk);
-        }
-        .btn-outline:hover { background: #eee; }
-
-        /* --- LIST ITEMS --- */
-        .list {
-            display: grid;
-            gap: 16px;
-        }
+        .list { display: grid; gap: 12px; }
 
         .list-item {
             background: white;
@@ -266,95 +207,14 @@
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 12px;
             transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
         }
 
-        .list-item:hover {
-            border-color: var(--wkbCoral);
-            transform: translateX(4px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        
-        .list-item.active {
-            border-color: var(--wkbCoral);
-            background-color: #fffaf9;
-        }
+        .list-item:hover { border-color: var(--accent); transform: translateX(2px); }
+        .list-item.active { border-color: var(--accent); background: #fffaf9; }
 
-        .item-thumb {
-            width: 64px;
-            height: 64px;
-            border-radius: 4px;
-            background-color: #f0f0f0;
-            flex-shrink: 0;
-            object-fit: cover;
-            border: 1px solid #eee;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ccc;
-            font-size: 1.5rem;
-        }
-
-        .item-content { flex: 1; min-width: 0; /* Fix for flex text overflow */ }
-
-        .item-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--wkbInk);
-            margin-bottom: 4px;
-            font-family: 'Cormorant Garamond', serif;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .item-subtitle {
-            font-size: 0.85rem;
-            color: #666;
-            font-family: 'Lato', sans-serif;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .item-meta {
-            text-align: right;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-
-        .pill {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            background: #F2EFE9;
-            padding: 4px 10px;
-            border-radius: 12px;
-            color: #666;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-        
-        .pill.coral { background: rgba(255, 107, 74, 0.1); color: var(--wkbCoral); }
-
-        .empty-state {
-            text-align: center;
-            color: #999;
-            padding: 80px 20px;
-            border: 2px dashed #E5E2DB;
-            border-radius: 8px;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.5rem;
-            font-style: italic;
-        }
-
-        /* --- RIGHT SIDEBAR: Inspector --- */
+        /* --- RIGHT SIDEBAR --- */
         .sidebar-right {
             width: 380px;
             background-color: var(--uiPanel);
@@ -371,36 +231,12 @@
             color: white;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            font-size: 1.1rem;
         }
 
-        .inspector-actions { display: flex; gap: 8px; }
+        .inspector-content { padding: 24px; overflow-y: auto; flex: 1; }
 
-        .icon-btn {
-            background: transparent;
-            border: 1px solid var(--uiBorder);
-            color: var(--textMuted);
-            border-radius: 4px;
-            padding: 6px 10px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .icon-btn:hover { border-color: var(--wkbCoral); color: var(--wkbCoral); }
-
-        .inspector-content {
-            padding: 24px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .form-section {
-            margin-bottom: 24px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid var(--uiBorder);
-        }
-        .form-section:last-child { border-bottom: none; }
-
+        /* --- FORMS --- */
+        .form-group { margin-bottom: 16px; }
         .form-label {
             display: block;
             color: var(--textMuted);
@@ -410,313 +246,122 @@
             margin-bottom: 8px;
             font-weight: 600;
         }
-        
-        .form-input, .form-select, .form-textarea {
+
+        .form-input, .form-select {
             width: 100%;
             background-color: var(--uiBg); 
             border: 1px solid var(--uiBorder);
-            color: white; 
+            color: white;
             padding: 10px 12px;
             border-radius: 4px;
-            font-family: 'Space Grotesk', monospace;
-            font-size: 0.9rem;
-            transition: 0.2s;
+            font-family: inherit;
         }
-        .form-textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
+        .form-input:focus, .form-select:focus { border-color: var(--accent); outline: none; }
         
-        .form-input:focus, .form-textarea:focus, .form-select:focus {
-            border-color: var(--wkbCoral);
-            box-shadow: 0 0 0 2px rgba(255, 107, 74, 0.1);
-            outline: none;
-        }
+        /* --- RICH TEXT (QUILL) --- */
+        .ql-toolbar { background: var(--uiPanel) !important; border: 1px solid var(--uiBorder) !important; border-radius: 4px 4px 0 0 !important; border-bottom: 1px solid var(--uiBorder) !important; }
+        .ql-container { background: var(--uiBg) !important; border: 1px solid var(--uiBorder) !important; border-top: none !important; color: white !important; min-height: 150px; border-radius: 0 0 4px 4px; }
+        .ql-editor.ql-blank::before { color: #555; font-style: normal; }
+        .ql-stroke { fill: none; stroke: #ccc; }
+        .ql-picker { color: white; }
+        .ql-picker-options { background: var(--uiPanel); border: 1px solid var(--uiBorder); }
 
-        .btn-action {
-            width: 100%;
-            background: white;
-            color: black;
-            border: none;
-            padding: 12px;
+        /* --- BUTTONS (THE FIX) --- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
             border-radius: 4px;
-            font-weight: 700;
+            font-weight: 600;
+            font-size: 0.85rem;
             cursor: pointer;
-            margin-top: 12px;
-            transition: 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            border: none;
+            font-family: 'Lato', sans-serif;
         }
-        .btn-action:hover { background: #eee; }
         
-        .btn-save { background: var(--wkbCoral); color: white; margin-top: 24px; }
+        .btn:hover { transform: translateY(-1px); }
+
+        /* Primary Action (Create New) - White button for contrast on list */
+        .btn-primary {
+            background: white;
+            color: var(--wkbInk);
+            border: 1px solid transparent;
+        }
+        .btn-primary:hover { background: #eee; }
+
+        /* Save Action - Coral brand color */
+        .btn-save {
+            background: var(--wkbCoral);
+            color: white;
+            width: 100%;
+            margin-top: 20px;
+        }
         .btn-save:hover { background: #e05536; }
 
-        .btn-delete {
+        /* Outline / Secondary */
+        .btn-outline {
             background: transparent;
-            border: 1px solid #ef4444;
+            border: 1px solid var(--uiBorder);
+            color: var(--textMuted);
+        }
+        .btn-outline:hover {
+            border-color: var(--textMain);
+            color: var(--textMain);
+        }
+
+        /* Danger */
+        .btn-danger {
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.5);
             color: #ef4444;
+            width: 100%;
             margin-top: 10px;
         }
-        .btn-delete:hover { background: rgba(239, 68, 68, 0.1); }
-
-        /* --- LOGIN & MODALS --- */
-        .login-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            padding: 20px;
-            backdrop-filter: blur(5px);
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
         }
 
-        .login-card {
-            width: 100%;
-            max-width: 400px;
-            background: var(--uiPanel);
-            border: 1px solid var(--uiBorder);
-            padding: 32px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 60;
-            padding: 20px;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-card {
-            width: 100%;
-            max-width: 420px;
-            background: var(--uiPanel);
-            border: 1px solid var(--uiBorder);
-            padding: 24px;
-            border-radius: 8px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        .preview-overlay {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            display: none;
-            align-items: stretch;
-            justify-content: stretch;
-            z-index: 100;
-        }
-
-        .preview-card {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .preview-header {
-            height: 48px;
-            background: #111;
-            border-bottom: 1px solid #333;
-            color: #888;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.8rem;
-            font-family: 'Space Grotesk', monospace;
-            position: relative;
-        }
-        
-        .preview-close {
-            position: absolute;
-            right: 20px;
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 1.2rem;
-        }
-        .preview-close:hover { color: var(--wkbCoral); }
-
-        .preview-body { flex: 1; background: #fff; }
-        .preview-iframe { width: 100%; height: 100%; border: 0; }
-
-        /* --- RESPONSIVE MOBILE FIXES --- */
+        /* --- RESPONSIVE --- */
         @media (max-width: 1024px) {
-            body { 
-                flex-direction: column; 
-                overflow: auto; 
-                height: auto; 
-                width: 100%;
-            }
-            #app { 
-                flex-direction: column; 
-                width: 100%; 
-                height: auto; 
-                overflow: visible; 
-                display: block; /* Remove flex stacking quirks */
-            }
-
-            /* SIDEBAR BECOMES TOP BAR */
-            .sidebar-left { 
-                width: 100%; 
-                height: auto; 
-                border-right: none; 
-                border-bottom: 1px solid var(--uiBorder);
-                position: sticky;
-                top: 0;
-                z-index: 50;
-                background: var(--uiPanel);
-            }
-
-            .components-list {
-                display: flex; /* Horizontal scroll instead of grid */
-                overflow-x: auto;
-                padding: 12px 16px;
-                gap: 8px;
-                flex-wrap: nowrap; /* Force scroll on mobile */
-                -webkit-overflow-scrolling: touch; /* Smooth scroll iOS */
-                scrollbar-width: none; /* Hide scrollbar Firefox */
-            }
-            .components-list::-webkit-scrollbar { display: none; /* Hide scrollbar Chrome/Safari */ }
-
-            .category-title { display: none; }
-
-            .nav-item {
-                margin: 0;
-                width: auto; /* Auto width based on content */
-                flex: 0 0 auto; /* Don't shrink */
-                padding: 8px 16px; /* Pill shape */
-                border-radius: 20px;
-                background-color: var(--uiHover);
-                font-size: 0.85rem;
-            }
-            
-            /* Show Text on Mobile */
-            .nav-item span { 
-                display: inline-block; 
-                color: var(--textMuted);
-            }
-            .nav-item:hover span, .nav-item.active span {
-                color: inherit;
-            }
-
-            .brand { padding: 12px 16px; }
-            .brand-footer { display: none; /* Hide footer on mobile to save space */ }
-
-            /* CANVAS ADJUSTMENTS */
-            .canvas-area { 
-                padding: 16px; 
-                background: var(--uiBg); /* Remove grid pattern for performance/space */
-            }
-            .page-container { 
-                width: 100%; 
-                padding: 20px; 
-                box-shadow: none; 
-                border-radius: 8px;
-            }
-
-            /* TYPOGRAPHY */
-            .list-title-group h1 { font-size: 1.8rem; }
-            .list-meta { font-size: 0.75rem; }
-
-            /* TOOLBAR RESPONSIVE */
-            .list-header { 
-                flex-direction: column; 
-                align-items: flex-start;
-                gap: 12px;
-                border: none; /* Remove bottom border for cleaner look */
-                padding-bottom: 8px;
-            }
-            
-            .toolbar { 
-                width: 100%; 
-                justify-content: flex-start;
-                flex-wrap: wrap; /* Allow buttons to wrap */
-                gap: 8px;
-            }
-            
-            .btn { 
-                font-size: 0.8rem; 
-                padding: 8px 12px; 
-                flex-grow: 1; /* Make buttons fill available space evenly */
-                justify-content: center;
-            }
-
-            /* INSPECTOR AT BOTTOM */
-            .sidebar-right { 
-                width: 100%; 
-                border-left: none; 
-                border-top: 1px solid var(--uiBorder); 
-                height: auto; 
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                max-height: 60vh; /* Don't cover whole screen */
-                transform: translateY(100%); /* Hidden by default */
-                transition: transform 0.3s ease-in-out;
-            }
-            
-            .sidebar-right.mobile-open {
-                transform: translateY(0);
-                box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
-            }
-
+            body { flex-direction: column; overflow: auto; height: auto; }
+            .sidebar-left { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--uiBorder); }
+            .components-list { display: flex; overflow-x: auto; padding: 12px; }
+            .nav-item span { display: inline; }
+            .sidebar-right { width: 100%; border-left: none; border-top: 1px solid var(--uiBorder); height: auto; position: fixed; bottom: 0; left: 0; transform: translateY(100%); transition: transform 0.3s; max-height: 70vh; }
+            .sidebar-right.mobile-open { transform: translateY(0); }
             .inspector-content { max-height: 50vh; }
         }
     </style>
 </head>
 <body>
-    <!-- LOGIN -->
-    <div id="login-overlay" class="login-overlay">
-        <div class="login-card">
-            <div style="margin-bottom:24px; color:white; font-family:'Cormorant Garamond'; font-size:2rem; font-weight:600; font-style:italic;">WKB CMS</div>
-            <p style="color:var(--textMuted); margin-bottom:24px;">Log ind for at administrere indhold.</p>
-            <div class="form-group" style="text-align:left;">
-                <label class="form-label">Brugernavn</label>
-                <input id="login-username" class="form-input" type="text" placeholder="admin">
-            </div>
-            <div style="margin-top:16px; text-align:left;" class="form-group">
-                <label class="form-label">Adgangskode</label>
-                <input id="login-password" class="form-input" type="password" placeholder="••••••••">
-            </div>
-            <button id="login-btn" class="btn-action btn-save" style="margin-top:24px;">Log ind</button>
-            <p id="login-status" class="status" style="margin-top: 12px; font-size:0.8rem; color: #ef4444;"></p>
+    <!-- LOGIN OVERLAY -->
+    <div id="login-overlay" class="login-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:50;">
+        <div style="width:100%; max-width:400px; background:var(--uiPanel); border:1px solid var(--uiBorder); padding:32px; border-radius:8px; text-align:center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+            <div style="margin-bottom:24px; color:white; font-family:'Cormorant Garamond'; font-size:2rem;">WKB CMS</div>
+            <p style="color:var(--textMuted); margin-bottom:24px;">Log ind for at administrere.</p>
+            <input id="login-username" class="form-input" type="text" placeholder="Brugernavn" style="margin-bottom:12px;">
+            <input id="login-password" class="form-input" type="password" placeholder="Adgangskode" style="margin-bottom:12px;">
+            <button id="login-btn" class="btn btn-save">Log ind</button>
         </div>
     </div>
 
     <!-- MAIN APP -->
     <div id="app" class="hidden">
-        <!-- Sidebar / Top Bar -->
         <nav class="sidebar-left">
             <div class="brand">
-                <i class="fa-solid fa-bolt"></i>
-                <div class="brand-text">WKB<span style="font-weight:300">CMS</span></div>
+                <i class="fa-solid fa-bolt"></i> WKB<span>CMS</span>
             </div>
-            <!-- Horizontal Scroll Navigation for Mobile -->
             <div class="components-list">
-                <div class="nav-item active" data-section="news">
-                    <i class="fa-regular fa-newspaper"></i> <span>Nyheder</span>
-                </div>
-                <div class="nav-item" data-section="events">
-                    <i class="fa-solid fa-calendar-days"></i> <span>Koncerter</span>
-                </div>
-                <div class="nav-item" data-section="members">
-                    <i class="fa-solid fa-users"></i> <span>Musikere</span>
-                </div>
-                <div class="nav-item" data-section="collaborators">
-                    <i class="fa-solid fa-handshake"></i> <span>Samarbejde</span>
-                </div>
-                <div class="nav-item" data-section="content">
-                    <i class="fa-solid fa-code"></i> <span>Sider (JSON)</span>
-                </div>
+                <div class="category-title">Indhold</div>
+                <div class="nav-item active" data-section="news"><i class="fa-regular fa-newspaper"></i> <span>Nyheder</span></div>
+                <div class="nav-item" data-section="events"><i class="fa-solid fa-calendar-days"></i> <span>Koncerter</span></div>
+                <div class="nav-item" data-section="members"><i class="fa-solid fa-users"></i> <span>Musikere</span></div>
+                <div class="category-title" style="margin-top:20px;">Struktur</div>
+                <div class="nav-item" data-section="content"><i class="fa-solid fa-layer-group"></i> <span>Sider & Tools</span></div>
             </div>
             <div class="brand-footer">
                 <div>By</div>
@@ -724,78 +369,36 @@
             </div>
         </nav>
 
-        <!-- Canvas Area -->
         <main class="canvas-area">
             <div class="page-container">
                 <div class="list-header">
-                    <div class="list-title-group">
-                        <h1 id="section-title">Nyheder</h1>
-                        <div id="section-meta" class="list-meta">Presse, releases og opdateringer</div>
+                    <div>
+                        <div id="section-title" style="font-size:2rem; font-family:'Cormorant Garamond'; color:#1A1C1B;">Nyheder</div>
+                        <div id="section-meta" style="color:#666; font-size:0.8rem;">Rediger indhold</div>
                     </div>
-                    <div class="toolbar">
+                    <div style="display:flex; gap:10px;">
+                        <button id="new-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ny</button>
                         <button id="refresh-btn" class="btn btn-outline"><i class="fa-solid fa-rotate-right"></i></button>
-                        <button id="new-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Opret ny</button>
                     </div>
                 </div>
                 <div id="list" class="list"></div>
             </div>
         </main>
 
-        <!-- Inspector / Bottom Sheet -->
         <aside class="sidebar-right" id="sidebar-right">
             <div class="inspector-header">
                 <span id="inspector-title">Egenskaber</span>
-                <div class="inspector-actions">
-                    <!-- Mobile Close Button -->
-                    <button id="mobile-close-inspector" class="icon-btn" style="display:none;"><i class="fa-solid fa-chevron-down"></i></button>
-                    <button id="new-admin-btn" class="icon-btn" title="Ny admin"><i class="fa-solid fa-user-plus"></i></button>
-                    <button id="sign-out-btn" class="icon-btn" title="Log ud"><i class="fa-solid fa-right-from-bracket"></i></button>
-                </div>
+                <button id="sign-out-btn" style="background:none; border:none; color:var(--textMuted); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
             <div class="inspector-content" id="inspector-body" style="display:none;"></div>
             <div id="empty-state" style="padding:40px; text-align:center; color:var(--textMuted);">
-                <i class="fa-solid fa-arrow-pointer" style="font-size:2rem; margin-bottom:15px; opacity:0.5;"></i>
-                <p>Vælg et element til venstre for at redigere.</p>
+                <p>Vælg et element til venstre.</p>
             </div>
         </aside>
     </div>
 
-    <!-- ADMIN MODAL -->
-    <div id="admin-modal" class="modal-overlay">
-        <div class="modal-card">
-            <h2 style="margin-bottom:16px; font-family:'Cormorant Garamond'; font-size:1.5rem; color:white;">Ny Bruger</h2>
-            <p style="color: var(--textMuted); margin-bottom: 16px;">Opret adgang til systemet.</p>
-            <div class="form-group" style="margin-bottom:16px;">
-                <label class="form-label">Brugernavn</label>
-                <input id="modal-username" class="form-input" type="text" placeholder="nyadmin">
-            </div>
-            <div class="form-group" style="margin-bottom:16px;">
-                <label class="form-label">Adgangskode</label>
-                <input id="modal-password" class="form-input" type="password" placeholder="••••••••">
-            </div>
-            <button id="modal-create" class="btn-action btn-save">Opret bruger</button>
-            <button id="modal-cancel" class="btn-action" style="background:transparent; border:1px solid var(--uiBorder); color:var(--textMuted);">Annuller</button>
-            <p id="modal-status" class="status" style="margin-top: 12px;"></p>
-        </div>
-    </div>
-
-    <!-- PREVIEW MODAL -->
-    <div id="preview-modal" class="preview-overlay">
-        <div class="preview-card">
-            <div class="preview-header">
-                <span>LIVE PREVIEW</span>
-                <button id="preview-close" class="preview-close"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="preview-body">
-                <iframe id="preview-iframe" class="preview-iframe" src=""></iframe>
-            </div>
-        </div>
-    </div>
-
-    <!-- LOGIC -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // --- CONFIG ---
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
         const SUPABASE_URL = 'https://rtblicylmsfhpeggqmlp.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_7b6MrtzuIoPBz0RiC9YDEg_v6khvC2y';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -804,558 +407,419 @@
             news: { title: 'Nyheder', subtitle: 'Presse, releases og opdateringer' },
             events: { title: 'Koncerter', subtitle: 'Tourkalender og billetter' },
             members: { title: 'Musikere', subtitle: 'Bandmedlemmer og besætning' },
-            collaborators: { title: 'Samarbejdspartnere', subtitle: 'Marquee liste' },
-            content: { title: 'Sider', subtitle: 'JSON Struktur og indhold' }
+            content: { title: 'Sider & Tools', subtitle: 'Forside, Om os, Footer' }
         };
 
-        const state = {
-            section: 'news',
-            items: [],
-            selected: null
-        };
+        const state = { section: 'news', items: [], selected: null };
+        
+        // --- RICH TEXT EDITOR ---
+        const RichTextEditor = ({ value, onChange, placeholder }) => {
+            const editorRef = useRef(null);
+            const quillInstance = useRef(null);
 
-        // --- UTILS ---
-        const draftKey = (section, id) => `wkbDraft:${section}:${id || 'new'}`;
-        const saveDraft = (section, id, data) => {
-            try { localStorage.setItem(draftKey(section, id), JSON.stringify({ id: id || null, data })); } 
-            catch (err) { console.warn(err); }
-        };
-        const loadDraft = (section, id) => {
-            try { const raw = localStorage.getItem(draftKey(section, id)); return raw ? JSON.parse(raw) : null; } 
-            catch (err) { return null; }
-        };
-        const clearDraft = (section, id) => {
-            try { localStorage.removeItem(draftKey(section, id)); } catch (err) {}
-        };
-        const formatDateInput = (value) => {
-            if (!value) return '';
-            const date = new Date(value);
-            const pad = (n) => `${n}`.padStart(2, '0');
-            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-        };
-        const parseDateInput = (value) => {
-            if (!value) return null;
-            return new Date(value).toISOString();
-        };
-
-        // --- DOM ELEMENTS ---
-        const loginOverlay = document.getElementById('login-overlay');
-        const appRoot = document.getElementById('app');
-        const listEl = document.getElementById('list');
-        const inspectorBody = document.getElementById('inspector-body');
-        const inspectorTitle = document.getElementById('inspector-title');
-        const emptyState = document.getElementById('empty-state');
-        const sectionTitle = document.getElementById('section-title');
-        const sectionMetaText = document.getElementById('section-meta');
-        const sidebarRight = document.getElementById('sidebar-right');
-        const mobileCloseBtn = document.getElementById('mobile-close-inspector');
-
-        // --- MOBILE CHECK ---
-        const isMobile = () => window.innerWidth <= 1024;
-
-        // --- NAVIGATION ---
-        const setActiveNav = (section) => {
-            document.querySelectorAll('.nav-item').forEach((item) => {
-                item.classList.toggle('active', item.dataset.section === section);
-            });
-        };
-
-        const setSection = async (section) => {
-            state.section = section;
-            state.selected = null;
-            
-            // Close mobile inspector if open
-            sidebarRight.classList.remove('mobile-open');
-            if(isMobile()) mobileCloseBtn.style.display = 'block';
-
-            inspectorBody.style.display = 'none';
-            emptyState.style.display = 'block';
-            inspectorTitle.textContent = 'Egenskaber';
-            
-            const meta = sectionMeta[section];
-            sectionTitle.textContent = meta.title;
-            sectionMetaText.textContent = meta.subtitle;
-            
-            setActiveNav(section);
-            await loadSection(section);
-            renderList();
-        };
-
-        const loadSection = async (section) => {
-            let query;
-            if (section === 'news') query = supabaseClient.from('news').select('*').order('published_at', { ascending: false });
-            else if (section === 'events') query = supabaseClient.from('events').select('*').order('event_date', { ascending: true });
-            else if (section === 'members') query = supabaseClient.from('members').select('*').order('sort_order', { ascending: true });
-            else if (section === 'collaborators') query = supabaseClient.from('collaborators').select('*').order('sort_order', { ascending: true });
-            else query = supabaseClient.from('content_pages').select('*').order('slug', { ascending: true });
-
-            const { data, error } = await query;
-            if (error) { console.error(error); state.items = []; return; }
-            state.items = data || [];
-        };
-
-        // --- RENDERING LIST ---
-        const getThumbnail = (item) => {
-            if (!item.image_url) return '<i class="fa-solid fa-image"></i>';
-            return `<img src="${item.image_url}" class="item-thumb" alt="thumb">`;
-        };
-
-        const renderList = () => {
-            if (!state.items.length) {
-                listEl.innerHTML = `<div class="empty-state">Ingen indhold endnu.<br><span style="font-size:1rem; font-family:'Lato'; font-style:normal;">Klik "Opret ny" for at starte.</span></div>`;
-                return;
-            }
-
-            listEl.innerHTML = state.items.map((item) => {
-                const isSelected = state.selected && state.selected.id === item.id ? 'active' : '';
-                let thumbHtml = '<div class="item-thumb"><i class="fa-solid fa-file"></i></div>';
-                let metaContent = '';
-                let title = item.title || item.name || item.slug || 'Uden titel';
-                let subtitle = '';
-
-                if (state.section === 'news') {
-                    thumbHtml = getThumbnail(item);
-                    subtitle = item.published_at ? new Date(item.published_at).toLocaleDateString('da-DK') : 'Ingen dato';
-                    metaContent = `<span class="pill">Nyhed</span>`;
-                } else if (state.section === 'events') {
-                    thumbHtml = `<div class="item-thumb" style="background:#F2EFE9; color:var(--wkbCoral);">${new Date(item.event_date).getDate()}</div>`;
-                    subtitle = item.location || 'Lokation mangler';
-                    metaContent = `<span class="pill coral" style="background:${item.theme === 'text-wkbCoral' ? '#ffe5e0' : '#F2EFE9'}; color:${item.theme === 'text-wkbCoral' ? 'var(--wkbCoral)' : '#666'}">${item.title ? 'Billetter' : 'Info'}</span>`;
-                } else if (state.section === 'members') {
-                    thumbHtml = getThumbnail(item);
-                    subtitle = item.instrument || 'Instrument';
-                    metaContent = `<span class="pill">#${item.sort_order ?? 0}</span>`;
-                } else if (state.section === 'collaborators') {
-                    thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-user-tag"></i></div>`;
-                    subtitle = 'Samarbejde';
-                    metaContent = `<span class="pill">#${item.sort_order ?? 0}</span>`;
-                } else {
-                    metaContent = `<span class="pill">JSON</span>`;
-                }
-
-                return `
-                    <div class="list-item ${isSelected}" data-id="${item.id}">
-                        ${thumbHtml}
-                        <div class="item-content">
-                            <div class="item-title">${title}</div>
-                            <div class="item-subtitle">${subtitle}</div>
-                        </div>
-                        <div class="item-meta">
-                            ${metaContent}
-                            <i class="fa-solid fa-chevron-right" style="color:#ccc; font-size:0.8rem;"></i>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            listEl.querySelectorAll('.list-item').forEach((el) => {
-                el.addEventListener('click', () => {
-                    const id = el.dataset.id;
-                    const item = state.items.find((entry) => entry.id === id);
-                    selectItem(item);
-                });
-            });
-        };
-
-        // --- FORMS ---
-        const selectItem = (item) => {
-            state.selected = item;
-            inspectorTitle.textContent = item?.title || item?.name || 'Rediger';
-            inspectorBody.style.display = 'block';
-            emptyState.style.display = 'none';
-            renderForm();
-            
-            // Mobile behavior: slide up inspector
-            if(isMobile()) {
-                sidebarRight.classList.add('mobile-open');
-                mobileCloseBtn.style.display = 'block';
-                // Scroll inspector to top
-                inspectorBody.scrollTop = 0;
-            }
-        };
-
-        const newItem = () => {
-            state.selected = { _new: true };
-            inspectorTitle.textContent = 'Opret nyt';
-            inspectorBody.style.display = 'block';
-            emptyState.style.display = 'none';
-            renderForm();
-             if(isMobile()) {
-                sidebarRight.classList.add('mobile-open');
-                mobileCloseBtn.style.display = 'block';
-                inspectorBody.scrollTop = 0;
-            }
-        };
-
-        const uploadImage = async (file) => {
-            const fileExt = file.name.split('.').pop();
-            const filePath = `${crypto.randomUUID()}.${fileExt}`;
-            const { error } = await supabaseClient.storage.from('media').upload(filePath, file, { upsert: true });
-            if (error) throw error;
-            const { data } = supabaseClient.storage.from('media').getPublicUrl(filePath);
-            return { url: data.publicUrl, path: filePath };
-        };
-
-        const renderForm = () => {
-            const item = state.selected || {};
-            let html = '';
-
-            const commonFields = () => `
-                <div class="form-section">
-                    <label class="form-label">Titel</label>
-                    <input id="field-title" class="form-input" type="text" value="${item.title || ''}" placeholder="Indtast titel...">
-                </div>
-            `;
-
-            if (state.section === 'news') {
-                html += `
-                    ${commonFields()}
-                    <div class="form-section">
-                        <label class="form-label">Udgivelsesdato</label>
-                        <input id="field-date" class="form-input" type="datetime-local" value="${formatDateInput(item.published_at)}">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Billede</label>
-                        <input id="field-image" class="form-input" type="text" value="${item.image_url || ''}" placeholder="https://...">
-                        <div style="margin-top:8px; font-size:0.8rem; color:var(--textMuted);">Eller upload ny:</div>
-                        <input id="field-upload" class="form-input" type="file" accept="image/*" style="margin-top:4px;">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Brødtekst</label>
-                        <textarea id="field-body" class="form-textarea" placeholder="Skriv nyheden her...">${item.body || ''}</textarea>
-                    </div>
-                `;
-            } else if (state.section === 'events') {
-                html += `
-                    ${commonFields()}
-                    <div class="form-section">
-                        <label class="form-label">Undertitel / Support</label>
-                        <input id="field-subtitle" class="form-input" type="text" value="${item.subtitle || ''}">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Dato og tid</label>
-                        <input id="field-date" class="form-input" type="datetime-local" value="${formatDateInput(item.event_date)}">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Lokation</label>
-                        <input id="field-location" class="form-input" type="text" value="${item.location || ''}">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Billetlink</label>
-                        <input id="field-ticket" class="form-input" type="text" value="${item.ticket_link || ''}">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Temafarve</label>
-                        <select id="field-theme" class="form-select">
-                            <option value="text-wkbInk" ${item.theme === 'text-wkbInk' ? 'selected' : ''}>Sort Ink</option>
-                            <option value="text-wkbCoral" ${item.theme === 'text-wkbCoral' ? 'selected' : ''}>Coral (Fremhævet)</option>
-                            <option value="text-wkbSage" ${item.theme === 'text-wkbSage' ? 'selected' : ''}>Sage Grøn</option>
-                        </select>
-                    </div>
-                `;
-            } else if (state.section === 'members') {
-                html += `
-                    <div class="form-section">
-                        <label class="form-label">Navn</label>
-                        <input id="field-name" class="form-input" type="text" value="${item.name || ''}">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Instrument / Rolle</label>
-                        <input id="field-instrument" class="form-input" type="text" value="${item.instrument || ''}">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Billede URL</label>
-                        <input id="field-image" class="form-input" type="text" value="${item.image_url || ''}">
-                        <input id="field-upload" class="form-input" type="file" accept="image/*" style="margin-top:4px;">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Sortering</label>
-                        <input id="field-order" class="form-input" type="number" value="${item.sort_order ?? 0}">
-                    </div>
-                `;
-            } else if (state.section === 'collaborators') {
-                 html += `
-                    <div class="form-section">
-                        <label class="form-label">Navn</label>
-                        <input id="field-name" class="form-input" type="text" value="${item.name || ''}">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Sortering</label>
-                        <input id="field-order" class="form-input" type="number" value="${item.sort_order ?? 0}">
-                    </div>
-                `;
-            } else if (state.section === 'content') {
-                html += `
-                    <div class="form-section">
-                        <label class="form-label">Slug (URL)</label>
-                        <input id="field-slug" class="form-input" type="text" value="${item.slug || ''}" ${item._new ? '' : 'disabled'}>
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">Titel</label>
-                        <input id="field-title" class="form-input" type="text" value="${item.title || ''}">
-                    </div>
-                    <div class="form-section">
-                        <label class="form-label">JSON Data</label>
-                        <textarea id="field-json" class="form-textarea" style="font-family:monospace; font-size:0.8rem;">${item.data ? JSON.stringify(item.data, null, 2) : '{}'}</textarea>
-                    </div>
-                `;
-            }
-
-            html += `
-                <button class="btn-action" data-action="preview"><i class="fa-solid fa-eye"></i> Forhåndsvisning</button>
-                <button class="btn-action btn-save" data-action="save"><i class="fa-solid fa-floppy-disk"></i> Gem Ændringer</button>
-                ${!item._new ? `<button class="btn-action btn-delete" data-action="delete"><i class="fa-solid fa-trash"></i> Slet</button>` : ''}
-                <button class="btn-action" data-action="cancel" style="background:transparent; border:1px solid var(--uiBorder); color:var(--textMuted); margin-top:8px;">Annuller</button>
-            `;
-
-            inspectorBody.innerHTML = html;
-            attachFormActions();
-            bindDraft();
-        };
-
-        const attachFormActions = () => {
-            inspectorBody.querySelector('[data-action="save"]').addEventListener('click', saveItem);
-            const deleteBtn = inspectorBody.querySelector('[data-action="delete"]');
-            if(deleteBtn) deleteBtn.addEventListener('click', deleteItem);
-            inspectorBody.querySelector('[data-action="cancel"]').addEventListener('click', cancelEdit);
-            inspectorBody.querySelector('[data-action="preview"]').addEventListener('click', previewBySection);
-        };
-
-        const bindDraft = () => {
-            const id = state.selected?._new ? null : state.selected?.id;
-            const draft = loadDraft(state.section, id);
-            if (draft && draft.data) {
-                Object.entries(draft.data).forEach(([key, value]) => {
-                    const el = document.getElementById(key);
-                    if (el && value !== undefined) el.value = value;
-                });
-            }
-
-            inspectorBody.querySelectorAll('input, textarea, select').forEach((el) => {
-                if (el.type === 'file') {
-                    el.addEventListener('change', () => {
-                         const file = el.files && el.files[0];
-                         if (!file) return;
-                         const reader = new FileReader();
-                         reader.onload = () => {
-                             const data = {};
-                             inspectorBody.querySelectorAll('input, textarea, select').forEach((field) => {
-                                 if (field.type === 'file') return;
-                                 data[field.id] = field.value;
-                             });
-                             saveDraft(state.section, id, data);
-                         };
-                         reader.readAsDataURL(file);
+            useEffect(() => {
+                if (editorRef.current && !quillInstance.current) {
+                    quillInstance.current = new Quill(editorRef.current, {
+                        theme: 'snow',
+                        placeholder: placeholder,
+                        modules: {
+                            toolbar: [
+                                ['bold', 'italic', 'underline'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                ['link']
+                            ]
+                        }
                     });
-                    return;
-                }
-                el.addEventListener('input', () => {
-                    const data = {};
-                    inspectorBody.querySelectorAll('input, textarea, select').forEach((field) => {
-                        if (field.type === 'file') return;
-                        data[field.id] = field.value;
+                    
+                    quillInstance.current.on('text-change', () => {
+                        onChange(quillInstance.current.root.innerHTML);
                     });
-                    saveDraft(state.section, id, data);
-                });
-            });
+                }
+                
+                if (quillInstance.current && editorRef.current) {
+                    const currentContent = quillInstance.current.root.innerHTML;
+                    if (currentContent !== value && value !== '<p><br></p>') {
+                        quillInstance.current.root.innerHTML = value;
+                    }
+                }
+            }, [value]);
+
+            return <div ref={editorRef}></div>;
         };
 
-        const cancelEdit = () => {
-            state.selected = null;
-            inspectorBody.style.display = 'none';
-            emptyState.style.display = 'block';
-            inspectorTitle.textContent = 'Egenskaber';
-            renderList();
-            // Close mobile sheet
-            sidebarRight.classList.remove('mobile-open');
-            if(state.items.length > 0) clearDraft(state.section, state.items[0].id);
-        };
+        // --- APP LOGIC ---
+        const App = () => {
+            const [view, setView] = useState('news');
+            const [items, setItems] = useState([]);
+            const [selected, setSelected] = useState(null);
+            const [inspectorOpen, setInspectorOpen] = useState(false);
+            const inspectorRef = useRef(null);
 
-        const previewModal = document.getElementById('preview-modal');
-        const previewIframe = document.getElementById('preview-iframe');
+            useEffect(() => {
+                if (inspectorOpen && inspectorRef.current) {
+                    inspectorRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, [inspectorOpen]);
 
-        const closePreview = () => {
-            previewModal.style.display = 'none';
-            previewIframe.src = '';
-        };
-
-        document.getElementById('preview-close').addEventListener('click', closePreview);
-        previewModal.addEventListener('click', (e) => { if (e.target === previewModal) closePreview(); });
-
-        const buildImageSrc = async () => {
-            const fileInput = document.getElementById('field-upload');
-            if (fileInput && fileInput.files && fileInput.files[0]) {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(fileInput.files[0]);
-                });
-            }
-            return document.getElementById('field-image')?.value?.trim() || '';
-        };
-
-        const previewBySection = async () => {
-            const payload = { type: state.section, data: {} };
-
-            if (state.section === 'news') {
-                payload.data = {
-                    title: document.getElementById('field-title')?.value,
-                    publishedAt: document.getElementById('field-date')?.value,
-                    body: document.getElementById('field-body')?.value,
-                    imageUrl: await buildImageSrc()
+            // AUTH
+            useEffect(() => {
+                const checkSession = async () => {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (!session) document.getElementById('login-overlay').style.display = 'flex';
                 };
-            } else if (state.section === 'events') {
-                payload.data = {
-                    title: document.getElementById('field-title')?.value,
-                    subtitle: document.getElementById('field-subtitle')?.value,
-                    date: document.getElementById('field-date')?.value,
-                    location: document.getElementById('field-location')?.value,
-                    ticketLink: document.getElementById('field-ticket')?.value,
-                    theme: document.getElementById('field-theme')?.value
-                };
-            } else if (state.section === 'members') {
-                payload.data = {
-                    name: document.getElementById('field-name')?.value,
-                    instrument: document.getElementById('field-instrument')?.value,
-                    imageUrl: await buildImageSrc()
-                };
-            } else {
-                alert('Preview er kun tilgængeligt for visuelle elementer.');
-                return;
-            }
+                checkSession();
+            }, []);
 
-            localStorage.setItem('wkbPreview', JSON.stringify(payload));
-            const pageMap = { news: 'news', events: 'calendar', members: 'about' };
-            const page = pageMap[state.section] || 'index';
-            previewIframe.src = `../index.html?preview=${page}`;
-            previewModal.style.display = 'flex';
-        };
+            document.getElementById('login-btn').onclick = async () => {
+                const u = document.getElementById('login-username').value;
+                const p = document.getElementById('login-password').value;
+                const { error } = await supabaseClient.auth.signInWithPassword({ email: `${u}@wkb.local`, password: p });
+                if (!error) document.getElementById('login-overlay').style.display = 'none';
+                else alert('Login fejlede');
+            };
 
-        const saveItem = async () => {
-            const item = state.selected || {};
-            try {
+            document.getElementById('sign-out-btn').onclick = async () => {
+                await supabaseClient.auth.signOut();
+                window.location.reload();
+            };
+
+            // DATA FETCHING
+            const loadSection = async (section) => {
+                let query;
+                if (section === 'news') query = supabaseClient.from('news').select('*').order('published_at', { ascending: false });
+                else if (section === 'events') query = supabaseClient.from('events').select('*').order('event_date', { ascending: true });
+                else if (section === 'members') query = supabaseClient.from('members').select('*').order('sort_order', { ascending: true });
+                else if (section === 'content') query = supabaseClient.from('content_pages').select('*');
+                
+                const { data } = await query;
+                setItems(data || []);
+                setView(section);
+                
+                // Update UI text
+                document.getElementById('section-title').innerText = sectionMeta[section].title;
+                document.getElementById('section-meta').innerText = sectionMeta[section].subtitle;
+                closeInspector();
+            };
+
+            // HANDLERS
+            const handleNavClick = (s) => {
+                loadSection(s);
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                document.querySelector(`[data-section="${s}"]`).classList.add('active');
+                closeInspector();
+            };
+
+            const closeInspector = () => {
+                setSelected(null);
+                setInspectorOpen(false);
+                document.getElementById('inspector-body').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+                document.getElementById('inspector-title').innerText = 'Egenskaber';
+                if(window.innerWidth <= 1024) document.getElementById('sidebar-right').classList.remove('mobile-open');
+            };
+
+            const selectItem = (item) => {
+                setSelected(item);
+                document.getElementById('inspector-title').innerText = item.title || item.name || 'Rediger';
+                document.getElementById('inspector-body').style.display = 'block';
+                document.getElementById('empty-state').style.display = 'none';
+                setInspectorOpen(true);
+                if(window.innerWidth <= 1024) document.getElementById('sidebar-right').classList.add('mobile-open');
+            };
+
+            const newItem = () => {
+                setSelected({ _new: true });
+                document.getElementById('inspector-title').innerText = 'Opret ny';
+                document.getElementById('inspector-body').style.display = 'block';
+                document.getElementById('empty-state').style.display = 'none';
+                setInspectorOpen(true);
+                if(window.innerWidth <= 1024) document.getElementById('sidebar-right').classList.add('mobile-open');
+            };
+
+            const saveItem = async () => {
+                const s = view;
+                const item = selected || {};
+                
+                const uploadImage = async (file) => {
+                    const ext = file.name.split('.').pop();
+                    const path = `${crypto.randomUUID()}.${ext}`;
+                    await supabaseClient.storage.from('media').upload(path, file);
+                    const { data } = supabaseClient.storage.from('media').getPublicUrl(path);
+                    return { url: data.publicUrl, path };
+                };
+
                 let payload = {};
 
-                if (state.section === 'news') {
-                    let imageUrl = document.getElementById('field-image').value.trim();
+                if (s === 'news') {
+                    const title = document.getElementById('field-title')?.value;
+                    const body = document.getElementById('field-body')?.parentElement.querySelector('.ql-editor').innerHTML;
+                    const imageUrl = document.getElementById('field-image')?.value;
                     const fileInput = document.getElementById('field-upload');
-                    if (fileInput.files && fileInput.files[0]) {
-                        const upload = await uploadImage(fileInput.files[0]);
-                        imageUrl = upload.url;
-                        payload.image_storage_path = upload.path;
+                    
+                    let finalUrl = imageUrl;
+                    if (fileInput.files[0]) {
+                        const u = await uploadImage(fileInput.files[0]);
+                        finalUrl = u.url;
+                        payload.image_storage_path = u.path;
                     }
+
                     payload = {
-                        title: document.getElementById('field-title').value.trim(),
-                        published_at: parseDateInput(document.getElementById('field-date').value),
-                        body: document.getElementById('field-body').value,
-                        image_url: imageUrl || null
+                        title, body, image_url: finalUrl,
+                        published_at: new Date(document.getElementById('field-date').value).toISOString()
                     };
-                } else if (state.section === 'events') {
+                } 
+                else if (s === 'events') {
                     payload = {
-                        title: document.getElementById('field-title').value.trim(),
-                        subtitle: document.getElementById('field-subtitle').value.trim(),
-                        event_date: parseDateInput(document.getElementById('field-date').value),
-                        location: document.getElementById('field-location').value.trim(),
-                        ticket_link: document.getElementById('field-ticket').value.trim(),
+                        title: document.getElementById('field-title').value,
+                        subtitle: document.getElementById('field-subtitle').value,
+                        event_date: new Date(document.getElementById('field-date').value).toISOString(),
+                        location: document.getElementById('field-location').value,
+                        ticket_link: document.getElementById('field-ticket').value,
                         theme: document.getElementById('field-theme').value
                     };
-                } else if (state.section === 'members') {
-                    let imageUrl = document.getElementById('field-image').value.trim();
-                    const fileInput = document.getElementById('field-upload');
-                    if (fileInput.files && fileInput.files[0]) {
-                        const upload = await uploadImage(fileInput.files[0]);
-                        imageUrl = upload.url;
-                        payload.image_storage_path = upload.path;
+                }
+                else if (s === 'members') {
+                     const imageUrl = document.getElementById('field-image')?.value;
+                     const fileInput = document.getElementById('field-upload');
+                     let finalUrl = imageUrl;
+                     if (fileInput.files[0]) {
+                        const u = await uploadImage(fileInput.files[0]);
+                        finalUrl = u.url;
+                        payload.image_storage_path = u.path;
                     }
                     payload = {
-                        name: document.getElementById('field-name').value.trim(),
-                        instrument: document.getElementById('field-instrument').value.trim(),
-                        image_url: imageUrl || null,
-                        sort_order: parseInt(document.getElementById('field-order').value || '0', 10)
+                        name: document.getElementById('field-name').value,
+                        instrument: document.getElementById('field-instrument').value,
+                        image_url: finalUrl,
+                        sort_order: parseInt(document.getElementById('field-order').value || 0)
                     };
-                } else if (state.section === 'collaborators') {
-                    payload = {
-                        name: document.getElementById('field-name').value.trim(),
-                        sort_order: parseInt(document.getElementById('field-order').value || '0', 10)
-                    };
-                } else if (state.section === 'content') {
-                    const jsonText = document.getElementById('field-json').value.trim();
-                    try { payload.data = JSON.parse(jsonText || '{}'); } 
-                    catch (err) { return alert('Ugyldig JSON'); }
-                    payload.title = document.getElementById('field-title').value.trim();
-                    payload.slug = document.getElementById('field-slug').value.trim();
+                }
+                else if (s === 'content') {
+                    const slug = document.getElementById('field-slug')?.value;
+                    
+                    if (slug === 'home') {
+                        payload.data = {
+                            tagline: document.getElementById('home-tagline').value,
+                            title_lines: document.getElementById('home-lines').value.split(',').map(s=>s.trim()),
+                            highlight_index: parseInt(document.getElementById('home-highlight').value) || 2,
+                            cta_label: document.getElementById('home-cta').value
+                        };
+                        payload.title = "Forside Indhold";
+                    } 
+                    else if (slug === 'about') {
+                        const bioHtml = document.getElementById('about-bio')?.parentElement.querySelector('.ql-editor').innerHTML;
+                        payload.data = {
+                            intro_title_main: document.getElementById('about-title-main').value,
+                            intro_title_emphasis: document.getElementById('about-title-emphasis').value,
+                            intro_text: bioHtml,
+                            epk_url: document.getElementById('about-epk').value,
+                            photos_url: document.getElementById('about-photos').value,
+                            text_url: document.getElementById('about-text').value
+                        };
+                        payload.title = "Om os Indhold";
+                    }
+                    else if (slug === 'footer') {
+                        const links = [
+                            { label: 'Instagram', url: document.getElementById('footer-ig').value },
+                            { label: 'Facebook', url: document.getElementById('footer-fb').value },
+                            { label: 'YouTube', url: document.getElementById('footer-yt').value },
+                        ];
+                        payload.data = { social_links: links };
+                        payload.title = "Footer Indhold";
+                    }
+                    else {
+                        payload.data = JSON.parse(document.getElementById('field-json').value);
+                    }
+                    payload.slug = slug;
                 }
 
                 if (item._new) {
-                    await supabaseClient.from(state.section).insert(payload);
+                    await supabaseClient.from(s).insert(payload);
                 } else {
-                    await supabaseClient.from(state.section).update(payload).eq('id', item.id);
+                    await supabaseClient.from(s).update(payload).eq('id', item.id);
+                }
+                loadSection(view);
+                closeInspector();
+            };
+
+            const previewItem = () => {
+                const p = { type: view, data: {} };
+                if (view === 'news') p.data = { title: document.getElementById('field-title')?.value, body: document.getElementById('field-body')?.parentElement.querySelector('.ql-editor').innerHTML };
+                localStorage.setItem('wkbPreview', JSON.stringify(p));
+                window.open(`../index.html?preview=${view}`, '_blank');
+            };
+
+            const deleteItem = async () => {
+                if (!confirm('Slet?')) return;
+                await supabaseClient.from(view).delete().eq('id', selected.id);
+                loadSection(view);
+                closeInspector();
+            };
+
+            // RENDERERS
+            useEffect(() => {
+                if (items.length === 0) {
+                    document.getElementById('list').innerHTML = `<div style="text-align:center; padding:20px; color:#999;">Ingen data.</div>`;
+                    return;
+                }
+                document.getElementById('list').innerHTML = items.map(item => `
+                    <div class="list-item" onclick="window.triggerSelect('${item.id}')">
+                        <div style="font-weight:600; color:black; font-family:'Cormorant Garamond'; font-size:1.1rem;">${item.title || item.name || item.slug}</div>
+                        <div style="font-size:0.8rem; color:#666;">${item.published_at || item.event_date || 'Ingen dato'}</div>
+                    </div>
+                `).join('');
+                
+                document.querySelectorAll('.list-item').forEach(el => {
+                    const id = el.getAttribute('onclick').match(/'([^']+)'/)[1];
+                    el.onclick = () => selectItem(items.find(i => i.id === id));
+                });
+            }, [items, selected]);
+
+            // FORM RENDERER
+            useEffect(() => {
+                if (!selected) return;
+                const container = document.getElementById('inspector-body');
+                let html = '';
+
+                const richField = (id, val) => `<div class="form-group"><label class="form-label">Tekst</label><div id="${id}">${val}</div></div>`;
+                const textField = (lbl, id, val, type='text') => `<div class="form-group"><label class="form-label">${lbl}</label><input id="${id}" class="form-input" type="${type}" value="${val || ''}" /></div>`;
+                const dateField = (lbl, id, val) => `<div class="form-group"><label class="form-label">${lbl}</label><input id="${id}" class="form-input" type="datetime-local" value="${val ? val.substring(0,16) : ''}" /></div>`;
+
+                if (view === 'news') {
+                    html += textField('Titel', 'field-title', selected.title);
+                    html += dateField('Dato', 'field-date', selected.published_at);
+                    html += textField('Billede URL', 'field-image', selected.image_url);
+                    html += `<div class="form-group"><label class="form-label">Upload</label><input id="field-upload" class="form-input" type="file" /></div>`;
+                    html += richField('field-body', selected.body);
+                }
+                else if (view === 'events') {
+                    html += textField('Titel', 'field-title', selected.title);
+                    html += textField('Support/Subtitle', 'field-subtitle', selected.subtitle);
+                    html += dateField('Dato', 'field-date', selected.event_date);
+                    html += textField('Lokation', 'field-location', selected.location);
+                    html += textField('Billetlink', 'field-ticket', selected.ticket_link);
+                    html += `<div class="form-group"><label class="form-label">Tema</label><select id="field-theme" class="form-select"><option value="text-wkbInk" ${selected.theme==='text-wkbInk'?'selected':''}>Sort</option><option value="text-wkbCoral" ${selected.theme==='text-wkbCoral'?'selected':''}>Coral</option></select></div>`;
+                }
+                else if (view === 'members') {
+                    html += textField('Navn', 'field-name', selected.name);
+                    html += textField('Instrument', 'field-instrument', selected.instrument);
+                    html += textField('Billede URL', 'field-image', selected.image_url);
+                    html += `<div class="form-group"><label class="form-label">Upload</label><input id="field-upload" class="form-input" type="file" /></div>`;
+                    html += textField('Sortering', 'field-order', selected.sort_order, 'number');
+                }
+                else if (view === 'content') {
+                    const slug = selected.slug || 'home';
+                    html += textField('Slug (Side ID)', 'field-slug', slug, selected._new ? 'text' : 'disabled');
+                    
+                    if (slug === 'home') {
+                        const d = selected.data || {};
+                        html += textField('Tagline', 'home-tagline', d.tagline);
+                        html += textField('Overskrifter (kommasepareret)', 'home-lines', (d.title_lines||[]).join(', '));
+                        html += textField('Highlight Index (0,1,2)', 'home-highlight', d.highlight_index);
+                        html += textField('Knap tekst', 'home-cta', d.cta_label);
+                    }
+                    else if (slug === 'about') {
+                        const d = selected.data || {};
+                        html += textField('Intro Hoved', 'about-title-main', d.intro_title_main);
+                        html += textField('Intro Fed', 'about-title-emphasis', d.intro_title_emphasis);
+                        html += richField('about-bio', d.intro_text);
+                        html += `<div class="form-group" style="margin-top:20px; border-top:1px solid var(--uiBorder); padding-top:10px;"><label class="form-label" style="color:var(--accent);">Presse Tools Links</label>`;
+                        html += textField('EPK PDF URL', 'about-epk', d.epk_url);
+                        html += textField('Pressefotos URL', 'about-photos', d.photos_url);
+                        html += textField('Bio Tekst URL', 'about-text', d.text_url);
+                        html += `</div>`;
+                    }
+                    else if (slug === 'footer') {
+                        const d = selected.data || { social_links: [] };
+                        html += `<div class="form-group"><label class="form-label">Instagram URL</label><input id="footer-ig" class="form-input" value="${d.social_links?.[0]?.url||''}" /></div>`;
+                        html += `<div class="form-group"><label class="form-label">Facebook URL</label><input id="footer-fb" class="form-input" value="${d.social_links?.[1]?.url||''}" /></div>`;
+                        html += `<div class="form-group"><label class="form-label">YouTube URL</label><input id="footer-yt" class="form-input" value="${d.social_links?.[2]?.url||''}" /></div>`;
+                    }
+                    else {
+                        html += `<div class="form-group"><label class="form-label">JSON Data</label><textarea id="field-json" class="form-input" style="height:200px; font-family:monospace;">${JSON.stringify(selected.data || {}, null, 2)}</textarea></div>`;
+                    }
                 }
 
-                await loadSection(state.section);
-                renderList();
-                cancelEdit();
-            } catch (err) {
-                console.error(err);
-                alert('Fejl under gemning: ' + err.message);
-            }
+                html += `<div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="btn btn-save" onclick="window.triggerSave()">Gem</button>
+                    <button class="btn btn-outline" onclick="window.triggerPreview()">Preview</button>
+                </div>`;
+                if (!selected._new) html += `<button class="btn btn-danger" onclick="window.triggerDelete()">Slet</button>`;
+                else html += `<button class="btn btn-outline" style="margin-top:10px; width:100%;" onclick="window.triggerCancel()">Annuller</button>`;
+
+                container.innerHTML = html;
+                
+                window.triggerSave = saveItem;
+                window.triggerPreview = previewItem;
+                window.triggerDelete = deleteItem;
+                window.triggerCancel = closeInspector;
+
+                // Init Rich Text
+                setTimeout(() => {
+                    const richContainers = document.querySelectorAll('.ql-container');
+                    richContainers.forEach(el => {
+                        if (!el.querySelector('.ql-toolbar')) {
+                            const q = new Quill(el, {
+                                theme: 'snow',
+                                placeholder: 'Skriv her...',
+                                modules: { toolbar: [['bold', 'italic'], ['link']] }
+                            });
+                        }
+                    });
+                }, 50);
+
+            }, [selected]);
+
+            return (
+                <div className="flex w-full h-full">
+                    <nav className="sidebar-left">
+                        <div className="brand">
+                            <i class="fa-solid fa-bolt"></i> WKB<span>CMS</span>
+                        </div>
+                        <div className="components-list">
+                            <div className="category-title">Indhold</div>
+                            <div className={`nav-item ${view==='news'?'active':''}`} onClick={() => handleNavClick('news')}><i class="fa-regular fa-newspaper"></i> <span>Nyheder</span></div>
+                            <div className={`nav-item ${view==='events'?'active':''}`} onClick={() => handleNavClick('events')}><i class="fa-solid fa-calendar-days"></i> <span>Koncerter</span></div>
+                            <div className={`nav-item ${view==='members'?'active':''}`} onClick={() => handleNavClick('members')}><i class="fa-solid fa-users"></i> <span>Musikere</span></div>
+                            <div className="category-title" style="margin-top:20px;">Struktur</div>
+                            <div className={`nav-item ${view==='content'?'active':''}`} onClick={() => handleNavClick('content')}><i class="fa-solid fa-layer-group"></i> <span>Sider & Tools</span></div>
+                        </div>
+                        <div className="brand-footer">
+                            <div>By</div>
+                            <span>StageReadyWeb</span>
+                        </div>
+                    </nav>
+                    <main className="canvas-area">
+                        <div className="page-container">
+                            <div className="list-header">
+                                <div>
+                                        <div id="section-title" style="font-size:2rem; font-family:'Cormorant Garamond'; color:#1A1C1B;">Nyheder</div>
+                                        <div id="section-meta" style="color:#666; font-size:0.8rem;">Rediger indhold</div>
+                                </div>
+                                <div style="display:flex; gap:10px;">
+                                    <button id="new-btn" className="btn btn-primary"><i class="fa-solid fa-plus"></i> Ny</button>
+                                    <button id="refresh-btn" className="btn btn-outline"><i class="fa-solid fa-rotate-right"></i></button>
+                                </div>
+                            </div>
+                            <div id="list" className="list"></div>
+                        </div>
+                    </main>
+                    <aside className="sidebar-right" id="sidebar-right" ref={inspectorRef}>
+                        <div className="inspector-header">
+                            <span id="inspector-title">Egenskaber</span>
+                            <button id="sign-out-btn" style="background:none; border:none; color:var(--textMuted); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
+                        </div>
+                        <div className="inspector-content" id="inspector-body" style="display:none;"></div>
+                        <div id="empty-state" style="padding:40px; text-align:center; color:var(--textMuted);">
+                            <p>Vælg et element til venstre.</p>
+                        </div>
+                    </aside>
+                </div>
+            );
         };
 
-        const deleteItem = async () => {
-            if (!confirm('Er du sikker på du vil slette dette?')) return;
-            try {
-                await supabaseClient.from(state.section).delete().eq('id', state.selected.id);
-                await loadSection(state.section);
-                renderList();
-                cancelEdit();
-            } catch (err) {
-                alert('Kunne ikke slette.');
-            }
-        };
-
-        // --- INIT ---
-        document.getElementById('new-btn').addEventListener('click', newItem);
-        document.getElementById('refresh-btn').addEventListener('click', () => setSection(state.section));
-        document.querySelectorAll('.nav-item').forEach(i => i.addEventListener('click', () => setSection(i.dataset.section)));
-        
-        // Mobile close inspector
-        mobileCloseBtn.addEventListener('click', cancelEdit);
-        
-        const showLogin = (show) => {
-            if (show) { loginOverlay.classList.remove('hidden'); appRoot.classList.add('hidden'); }
-            else { loginOverlay.classList.add('hidden'); appRoot.classList.remove('hidden'); }
-        };
-
-        document.getElementById('login-btn').addEventListener('click', async () => {
-            const u = document.getElementById('login-username').value;
-            const p = document.getElementById('login-password').value;
-            if(!u || !p) return alert('Udfyld felter');
-            const { error } = await supabaseClient.auth.signInWithPassword({ email: `${u}@wkb.local`, password: p });
-            if(error) alert('Login fejlede');
-            else showLogin(false);
-        });
-
-        document.getElementById('sign-out-btn').addEventListener('click', async () => {
-            await supabaseClient.auth.signOut();
-            showLogin(true);
-        });
-
-        const adminModal = document.getElementById('admin-modal');
-        document.getElementById('new-admin-btn').addEventListener('click', () => adminModal.style.display = 'flex');
-        document.getElementById('modal-cancel').addEventListener('click', () => adminModal.style.display = 'none');
-        document.getElementById('modal-create').addEventListener('click', async () => {
-            const u = document.getElementById('modal-username').value;
-            const p = document.getElementById('modal-password').value;
-            if(!u || !p) return;
-            const { error } = await supabaseClient.auth.signUp({ email: `${u}@wkb.local`, password: p });
-            if(error) alert('Fejl: ' + error.message);
-            else { alert('Bruger oprettet'); adminModal.style.display = 'none'; }
-        });
-
-        supabaseClient.auth.getSession().then(({ data }) => {
-            if (data.session) showLogin(false);
-        });
-
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
