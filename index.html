@@ -142,7 +142,10 @@
           const base = '/' + parts.slice(0, -1).join('/');
           return base === '/' ? '/' : base + '/';
         }
-        return '/' + parts.join('/') + '/';
+        if (parts.length >= 2) {
+          return '/' + parts[0] + '/';
+        }
+        return '/';
       };
 
       const basePath = getBasePath();
@@ -391,7 +394,7 @@
         );
       };
 
-      const Navigation = ({ currentView, setView }) => {
+      const Navigation = ({ currentView, setView, pages }) => {
         const navItems = [
           { id: 'home', label: 'Forside' },
           { id: 'news', label: 'Nyheder' },
@@ -408,7 +411,8 @@
             </div>
 
             <ul className="pointer-events-auto flex flex-col md:flex-row gap-2 md:gap-8 items-end md:items-center">
-              {navItems.map(item => (
+              {[...navItems, ...((pages || []).filter(p => p.data?.show_in_nav).map(p => ({ id: p.slug, label: p.title || p.slug })))]
+                .map(item => (
                 <li key={item.id}>
                   <button onClick={() => setView(item.id)} className={`relative text-xs tracking-[0.2em] uppercase transition-all duration-500 ${currentView === item.id ? 'text-wkbInk font-bold' : 'text-gray-400 hover:text-wkbInk'}`}>
                     {item.label}
@@ -446,6 +450,132 @@
           </div>
         </footer>
       );
+
+      const TextBlock = ({ heading, body }) => (
+        <section className="py-16 px-6 md:px-12 max-w-4xl mx-auto">
+          {heading && <h3 className="text-3xl md:text-4xl font-serif text-wkbInk mb-6">{heading}</h3>}
+          <div className="text-lg md:text-xl text-wkbInk/80 leading-relaxed">
+            {body ? <RichTextRenderer html={body} /> : null}
+          </div>
+        </section>
+      );
+
+      const ImageBlock = ({ image_url, image_focus_x, image_focus_y, image_scale, caption }) => {
+        const meta = parseImageMeta(image_url);
+        const fx = image_focus_x ?? meta.fx;
+        const fy = image_focus_y ?? meta.fy;
+        const z = image_scale ?? meta.z;
+        return (
+          <section className="py-12 px-6 md:px-12 max-w-5xl mx-auto">
+            <div className="overflow-hidden rounded-sm bg-[#E0DCD5]">
+              <img
+                src={meta.src}
+                alt={caption || 'Billede'}
+                className="w-full h-full object-cover"
+                style={{
+                  objectPosition: `${fx}% ${fy}%`,
+                  transform: `scale(${z / 100})`,
+                  transformOrigin: `${fx}% ${fy}%`
+                }}
+              />
+            </div>
+            {caption && <div className="text-xs uppercase tracking-widest text-wkbInk/50 mt-3">{caption}</div>}
+          </section>
+        );
+      };
+
+      const IntroBlock = ({ intro_title_main, intro_title_emphasis, intro_text }) => (
+        <section className="py-20 px-6 md:px-12 max-w-4xl mx-auto">
+          <h2 className="text-5xl md:text-6xl font-serif text-wkbInk mb-6">
+            {intro_title_main} <span className="text-wkbCoral">{intro_title_emphasis}</span>
+          </h2>
+          <div className="text-lg md:text-xl text-wkbInk/80 leading-relaxed">
+            {intro_text ? <RichTextRenderer html={intro_text} /> : null}
+          </div>
+        </section>
+      );
+
+      const MembersBlock = ({ members }) => (
+        <section className="py-20 px-6 md:px-12 max-w-6xl mx-auto">
+          <div className="flex justify-between items-end mb-12">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-wkbInk/40">Musikerne</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-12">
+            {(members || []).map((member, idx) => (
+              <div key={idx} className="group">
+                <div className="aspect-[3/4] overflow-hidden mb-4 relative bg-[#E0DCD5]">
+                  {(() => {
+                    const meta = parseImageMeta(member.imageUrl);
+                    return (
+                      <img
+                        src={meta.src}
+                        alt={member.name}
+                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 ease-in-out"
+                        style={{
+                          objectPosition: `${meta.fx}% ${meta.fy}%`,
+                          transform: `scale(${meta.z / 100})`,
+                          transformOrigin: `${meta.fx}% ${meta.fy}%`
+                        }}
+                      />
+                    );
+                  })()}
+                  <div className="absolute inset-0 bg-wkbInk/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 mix-blend-multiply"></div>
+                </div>
+                <h4 className="text-2xl font-serif italic text-wkbInk blend-ink">{member.name}</h4>
+                <p className="text-xs uppercase tracking-widest text-wkbSage mt-1">{member.instrument}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+
+      const ContactBlock = ({ title = 'Kontakt' }) => (
+        <section className="py-20 px-6 md:px-12 max-w-3xl mx-auto">
+          <h3 className="text-4xl font-serif text-wkbInk mb-8">{title}</h3>
+          <form className="space-y-4">
+            <div>
+              <label className="text-xs uppercase tracking-widest text-wkbInk/50 block mb-2">Navn</label>
+              <input type="text" className="w-full bg-white border border-wkbInk/10 p-3 focus:border-wkbCoral outline-none" />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-widest text-wkbInk/50 block mb-2">Email</label>
+              <input type="email" className="w-full bg-white border border-wkbInk/10 p-3 focus:border-wkbCoral outline-none" />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-widest text-wkbInk/50 block mb-2">Besked</label>
+              <textarea rows="4" className="w-full bg-white border border-wkbInk/10 p-3 focus:border-wkbCoral outline-none"></textarea>
+            </div>
+            <button type="button" className="w-full bg-wkbInk text-white py-3 uppercase tracking-widest font-bold hover:bg-wkbCoral transition-colors">Send Besked</button>
+          </form>
+        </section>
+      );
+
+      const BuilderPage = ({ page, members, plusContent }) => {
+        const blocks = page?.data?.blocks || [];
+        return (
+          <div className="min-h-screen">
+            {blocks.map((block, idx) => {
+              const type = block.type;
+              if (type === 'hero') {
+                return (
+                  <div key={idx}>
+                    <HomeSection setView={() => {}} homeContent={block} collaborators={[]} />
+                  </div>
+                );
+              }
+              if (type === 'intro') return <IntroBlock key={idx} {...block} />;
+              if (type === 'members') return <MembersBlock key={idx} members={members} />;
+              if (type === 'plus') return <PlusSection key={idx} plusContent={plusContent} />;
+              if (type === 'news') return <NewsSection key={idx} limit={block.limit} />;
+              if (type === 'calendar') return <CalendarSection key={idx} />;
+              if (type === 'text') return <TextBlock key={idx} heading={block.heading} body={block.body} />;
+              if (type === 'image') return <ImageBlock key={idx} {...block} />;
+              if (type === 'contact') return <ContactBlock key={idx} title={block.title} />;
+              return null;
+            })}
+          </div>
+        );
+      };
 
             const HomeSection = ({ setView, homeContent, collaborators }) => {
         return (
@@ -497,7 +627,7 @@
         );
       };
 
-      const NewsSection = () => {
+      const NewsSection = ({ limit } = {}) => {
         const [news, setNews] = useState([]);
         const [loading, setLoading] = useState(true);
 
@@ -526,7 +656,7 @@
                 body: item.body,
                 imageUrl: item.image_url
               }));
-              setNews(mapped);
+              setNews(limit ? mapped.slice(0, limit) : mapped);
               setLoading(false);
             })
             .catch(() => setLoading(false));
@@ -981,7 +1111,9 @@
         // Intro State to fix the "gone" issue
         const [introPlayed, setIntroPlayed] = useState(false);
         
-        const initialView = previewMode ? previewMode : getPageFromPath();
+        const initialView = previewMode === 'page'
+          ? (previewPayload?.data?.slug || 'page')
+          : (previewMode ? previewMode : getPageFromPath());
         const [view, setView] = useState(initialView);
         
         const handleSetView = (newView) => {
@@ -1005,6 +1137,7 @@
         }, []);
 
         const [contentPages, setContentPages] = useState({});
+        const [pages, setPages] = useState([]);
         const [members, setMembers] = useState([]);
         const [collaborators, setCollaborators] = useState([]);
 
@@ -1013,7 +1146,7 @@
           const loadContent = async () => {
             try {
               const [pagesRes, membersRes, collaboratorsRes] = await Promise.all([
-                supabaseClient.from('content_pages').select('slug,data'),
+                supabaseClient.from('content_pages').select('slug,title,data'),
                 supabaseClient.from('members').select('*').order('sort_order', { ascending: true }),
                 supabaseClient.from('collaborators').select('*').order('sort_order', { ascending: true })
               ]);
@@ -1025,6 +1158,9 @@
                 pageMap[page.slug] = page.data || {};
               });
               setContentPages(pageMap);
+
+              const pageList = (pagesRes.data || []).filter((p) => p.data && p.data.page_type === 'page');
+              setPages(pageList);
 
               if (!(previewMode === 'about' && previewPayload?.type === 'members')) {
                 if (membersRes.data && membersRes.data.length) {
@@ -1048,10 +1184,17 @@
           return () => { alive = false; };
         }, []);
 
+        useEffect(() => {
+          if (previewMode === 'page' && previewPayload?.type === 'page') {
+            setPages([{ slug: previewPayload.data.slug || 'page', title: previewPayload.data.title, data: previewPayload.data }]);
+          }
+        }, []);
+
         const homeContent = contentPages.home || DEFAULT_HOME_CONTENT;
         const aboutContent = contentPages.about || DEFAULT_ABOUT_CONTENT;
         const plusContent = contentPages.plus || DEFAULT_PLUS_CONTENT;
         const footerContent = contentPages.footer || DEFAULT_FOOTER_CONTENT;
+        const currentPage = (pages || []).find((p) => p.slug === view);
 
         return (
           <main className="relative w-full min-h-screen bg-wkbPaper">
@@ -1069,12 +1212,13 @@
               {/* CONTENT LOGIC FIX: Show if Preview Mode OR Intro Played OR NOT Home */}
               {(previewMode || introPlayed || view !== 'home') && (
                 <>
-                  <Navigation currentView={view} setView={handleSetView} />
+                  <Navigation currentView={view} setView={handleSetView} pages={pages} />
                   {view === 'home' && <HomeSection setView={handleSetView} homeContent={homeContent} collaborators={collaborators} />}
                   {view === 'news' && <NewsSection />}
                   {view === 'about' && <AboutSection aboutContent={aboutContent} members={members} />}
                   {view === 'plus' && <PlusSection plusContent={plusContent} />}
                   {view === 'calendar' && <CalendarSection />}
+                  {currentPage && <BuilderPage page={currentPage} members={members} plusContent={plusContent} />}
                   <Footer footerContent={footerContent} />
                 </>
               )}

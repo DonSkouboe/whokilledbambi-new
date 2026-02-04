@@ -721,6 +721,9 @@
                 <div class="nav-item" data-section="wkbplus">
                     <i class="fa-solid fa-plus"></i> <span>WKB+</span>
                 </div>
+                <div class="nav-item" data-section="pages">
+                    <i class="fa-solid fa-layer-group"></i> <span>Sider</span>
+                </div>
                 <div class="nav-item" data-section="footer">
                     <i class="fa-solid fa-share-nodes"></i> <span>Socials</span>
                 </div>
@@ -816,6 +819,7 @@
             members: { title: 'Musikere', subtitle: 'Bandmedlemmer og besætning' },
             collaborators: { title: 'Samarbejdspartnere', subtitle: 'Marquee liste' },
             wkbplus: { title: 'WKB+', subtitle: 'Samarbejder og indhold' },
+            pages: { title: 'Sider', subtitle: 'Byg sider med blokke' },
             footer: { title: 'Socials', subtitle: 'Footer links' },
             content: { title: 'Sider', subtitle: 'JSON Struktur og indhold' }
         };
@@ -926,11 +930,15 @@
             else if (section === 'collaborators') query = supabaseClient.from('collaborators').select('*').order('sort_order', { ascending: true });
             else if (section === 'wkbplus') query = supabaseClient.from('content_pages').select('*').eq('slug', 'plus').order('slug', { ascending: true });
             else if (section === 'footer') query = supabaseClient.from('content_pages').select('*').eq('slug', 'footer').order('slug', { ascending: true });
+            else if (section === 'pages') query = supabaseClient.from('content_pages').select('*').order('slug', { ascending: true });
             else query = supabaseClient.from('content_pages').select('*').order('slug', { ascending: true });
 
             const { data, error } = await query;
             if (error) { console.error(error); state.items = []; return; }
             state.items = data || [];
+            if (section === 'pages') {
+                state.items = state.items.filter((i) => (i.data && i.data.page_type === 'page'));
+            }
         };
 
         const ensureContentPages = async () => {
@@ -1035,6 +1043,10 @@
                     thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-plus"></i></div>`;
                     subtitle = 'WKB+';
                     metaContent = `<span class="pill">Side</span>`;
+                } else if (state.section === 'pages') {
+                    thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-layer-group"></i></div>`;
+                    subtitle = item.slug || 'Side';
+                    metaContent = `<span class="pill">${(item.data && item.data.show_in_nav) ? 'Menu' : 'Skjult'}</span>`;
                 } else if (state.section === 'footer') {
                     thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-share-nodes"></i></div>`;
                     subtitle = 'Footer links';
@@ -1085,7 +1097,11 @@
         };
 
         const newItem = () => {
-            state.selected = { _new: true };
+            if (state.section === 'pages') {
+                state.selected = { _new: true, title: '', slug: '', data: { page_type: 'page', show_in_nav: true, blocks: [] } };
+            } else {
+                state.selected = { _new: true };
+            }
             inspectorTitle.textContent = 'Opret nyt';
             inspectorBody.style.display = 'block';
             emptyState.style.display = 'none';
@@ -1314,6 +1330,155 @@
                         <input id="field-order" class="form-input" type="number" value="${item.sort_order ?? 0}">
                     </div>
                 `;
+            } else if (state.section === 'pages') {
+                const data = item.data || {};
+                const blocks = data.blocks || [];
+                html += `
+                    <div class="form-section">
+                        <label class="form-label">Side titel</label>
+                        <input id="page-title" class="form-input" type="text" value="${item.title || ''}" placeholder="Side titel...">
+                    </div>
+                    <div class="form-section">
+                        <label class="form-label">Slug (URL)</label>
+                        <input id="page-slug" class="form-input" type="text" value="${item.slug || ''}" placeholder="fx om-os" ${item._new ? '' : 'disabled'}>
+                    </div>
+                    <div class="form-section">
+                        <label class="form-label">Vis i menu</label>
+                        <select id="page-show" class="form-select">
+                            <option value="yes" ${data.show_in_nav ? 'selected' : ''}>Ja</option>
+                            <option value="no" ${data.show_in_nav ? '' : 'selected'}>Nej</option>
+                        </select>
+                    </div>
+                    <div class="form-section">
+                        <label class="form-label">Tilføj blok</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="block-type" class="form-select" style="flex:1;">
+                                <option value="hero">Hero / Forside</option>
+                                <option value="intro">Intro tekst</option>
+                                <option value="members">Musikerne grid</option>
+                                <option value="plus">WKB+ sektion</option>
+                                <option value="news">Nyheder liste</option>
+                                <option value="calendar">Koncerter liste</option>
+                                <option value="text">Tekstblok</option>
+                                <option value="image">Billedeblok</option>
+                                <option value="contact">Kontakt</option>
+                            </select>
+                            <button class="btn btn-primary" id="add-block-btn"><i class="fa-solid fa-plus"></i> Tilføj</button>
+                        </div>
+                    </div>
+                `;
+
+                blocks.forEach((block, idx) => {
+                    const type = block.type || 'text';
+                    html += `
+                        <div class="form-section" data-page-block data-index="${idx}">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                                <label class="form-label" style="margin-bottom:0;">Blok ${idx + 1} • ${type}</label>
+                                <div style="display:flex; gap:6px;">
+                                    <button class="icon-btn" data-action="page-move-up" data-index="${idx}" title="Flyt op"><i class="fa-solid fa-chevron-up"></i></button>
+                                    <button class="icon-btn" data-action="page-move-down" data-index="${idx}" title="Flyt ned"><i class="fa-solid fa-chevron-down"></i></button>
+                                    <button class="icon-btn" data-action="page-remove" data-index="${idx}" title="Fjern"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+                            <input type="hidden" data-field="type" value="${type}">
+                    `;
+
+                    if (type === 'hero') {
+                        html += `
+                            <label class="form-label">Tagline</label>
+                            <input class="form-input" data-field="tagline" type="text" value="${block.tagline || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Overskrifter (kommasepareret)</label>
+                            <input class="form-input" data-field="title_lines" type="text" value="${(block.title_lines || []).join(', ')}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Highlight Index (0,1,2)</label>
+                            <input class="form-input" data-field="highlight_index" type="number" value="${block.highlight_index ?? 2}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">CTA tekst</label>
+                            <input class="form-input" data-field="cta_label" type="text" value="${block.cta_label || ''}">
+                        `;
+                    } else if (type === 'intro') {
+                        html += `
+                            <label class="form-label">Titel (normal)</label>
+                            <input class="form-input" data-field="intro_title_main" type="text" value="${block.intro_title_main || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Titel (fremhævet)</label>
+                            <input class="form-input" data-field="intro_title_emphasis" type="text" value="${block.intro_title_emphasis || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Tekst</label>
+                            <textarea class="form-textarea" data-field="intro_text">${block.intro_text || ''}</textarea>
+                        `;
+                    } else if (type === 'members') {
+                        html += `
+                            <label class="form-label">Vis medlemmer</label>
+                            <select class="form-select" data-field="use_members">
+                                <option value="yes" ${block.use_members !== false ? 'selected' : ''}>Ja</option>
+                                <option value="no" ${block.use_members === false ? 'selected' : ''}>Nej</option>
+                            </select>
+                        `;
+                    } else if (type === 'plus') {
+                        html += `
+                            <label class="form-label">Vis WKB+ indhold</label>
+                            <select class="form-select" data-field="use_plus">
+                                <option value="yes" ${block.use_plus !== false ? 'selected' : ''}>Ja</option>
+                                <option value="no" ${block.use_plus === false ? 'selected' : ''}>Nej</option>
+                            </select>
+                        `;
+                    } else if (type === 'news') {
+                        html += `
+                            <label class="form-label">Antal nyheder</label>
+                            <input class="form-input" data-field="limit" type="number" value="${block.limit || 6}">
+                        `;
+                    } else if (type === 'calendar') {
+                        html += `
+                            <label class="form-label">Vis kalender</label>
+                            <select class="form-select" data-field="use_calendar">
+                                <option value="yes" ${block.use_calendar !== false ? 'selected' : ''}>Ja</option>
+                                <option value="no" ${block.use_calendar === false ? 'selected' : ''}>Nej</option>
+                            </select>
+                        `;
+                    } else if (type === 'text') {
+                        html += `
+                            <label class="form-label">Overskrift</label>
+                            <input class="form-input" data-field="heading" type="text" value="${block.heading || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Tekst</label>
+                            <textarea class="form-textarea" data-field="body">${block.body || ''}</textarea>
+                        `;
+                    } else if (type === 'image') {
+                        html += `
+                            <label class="form-label">Billede URL</label>
+                            <input class="form-input" data-field="image_url" type="text" value="${block.image_url || ''}">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Billede fokus (X/Y)</label>
+                            <div style="display:flex; gap:8px; margin-bottom:8px;">
+                                <input class="form-input" data-field="image_focus_x" type="number" min="0" max="100" value="${block.image_focus_x ?? ''}" placeholder="X (0-100)">
+                                <input class="form-input" data-field="image_focus_y" type="number" min="0" max="100" value="${block.image_focus_y ?? ''}" placeholder="Y (0-100)">
+                            </div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_x" data-value="0">Venstre</button>
+                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_x" data-value="50">Center</button>
+                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_x" data-value="100">Højre</button>
+                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_y" data-value="0">Top</button>
+                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_y" data-value="50">Midt</button>
+                                <button class="icon-btn" data-action="page-focus" data-field="image_focus_y" data-value="100">Bund</button>
+                            </div>
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Billede zoom (%)</label>
+                            <input class="form-input" data-field="image_scale" type="number" min="80" max="160" value="${block.image_scale ?? ''}" placeholder="100">
+                            <div style="height:10px;"></div>
+                            <label class="form-label">Caption</label>
+                            <input class="form-input" data-field="caption" type="text" value="${block.caption || ''}">
+                        `;
+                    } else if (type === 'contact') {
+                        html += `
+                            <label class="form-label">Kontakt titel</label>
+                            <input class="form-input" data-field="title" type="text" value="${block.title || 'Kontakt'}">
+                        `;
+                    }
+
+                    html += `</div>`;
+                });
             } else if (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') {
                 const slug = item.slug || '';
                 const data = item.data || {};
@@ -1515,9 +1680,113 @@
                 bindPlusActions();
             }
             bindImageFocusActions();
+            if (state.section === 'pages') {
+                bindPageActions();
+            }
         };
 
-        const bindImageFocusActions = () => {
+        
+
+        const collectPageBlocks = () => {
+            const blocks = [];
+            inspectorBody.querySelectorAll('[data-page-block]').forEach((blockEl) => {
+                const type = blockEl.querySelector('[data-field="type"]')?.value || 'text';
+                const get = (field) => blockEl.querySelector(`[data-field="${field}"]`)?.value || '';
+                const block = { type };
+                if (type === 'hero') {
+                    block.tagline = get('tagline');
+                    block.title_lines = get('title_lines').split(',').map(s => s.trim()).filter(Boolean);
+                    block.highlight_index = parseInt(get('highlight_index') || '2', 10);
+                    block.cta_label = get('cta_label');
+                } else if (type === 'intro') {
+                    block.intro_title_main = get('intro_title_main');
+                    block.intro_title_emphasis = get('intro_title_emphasis');
+                    block.intro_text = get('intro_text');
+                } else if (type === 'members') {
+                    block.use_members = get('use_members') !== 'no';
+                } else if (type === 'plus') {
+                    block.use_plus = get('use_plus') !== 'no';
+                } else if (type === 'news') {
+                    block.limit = parseInt(get('limit') || '6', 10);
+                } else if (type === 'calendar') {
+                    block.use_calendar = get('use_calendar') !== 'no';
+                } else if (type === 'text') {
+                    block.heading = get('heading');
+                    block.body = get('body');
+                } else if (type === 'image') {
+                    block.image_url = get('image_url');
+                    block.image_focus_x = parseInt(get('image_focus_x') || '', 10) || undefined;
+                    block.image_focus_y = parseInt(get('image_focus_y') || '', 10) || undefined;
+                    block.image_scale = parseInt(get('image_scale') || '', 10) || undefined;
+                    block.caption = get('caption');
+                } else if (type === 'contact') {
+                    block.title = get('title');
+                }
+                blocks.push(block)
+            });
+            return blocks;
+        };
+
+        const bindPageActions = () => {
+            const addBtn = document.getElementById('add-block-btn');
+            if (addBtn) {
+                addBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const blockType = document.getElementById('block-type')?.value || 'text';
+                    const current = state.selected?.data || {};
+                    const blocks = collectPageBlocks();
+                    blocks.push({ type: blockType });
+                    state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
+                    renderForm();
+                });
+            }
+
+            inspectorBody.querySelectorAll('[data-action="page-remove"]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index || '0', 10);
+                    const current = state.selected?.data || {};
+                    const blocks = collectPageBlocks();
+                    blocks.splice(index, 1);
+                    state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
+                    renderForm();
+                });
+            });
+
+            inspectorBody.querySelectorAll('[data-action="page-move-up"]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index || '0', 10);
+                    if (index <= 0) return;
+                    const current = state.selected?.data || {};
+                    const blocks = collectPageBlocks();
+                    {const tmp = blocks[index-1]; blocks[index-1] = blocks[index]; blocks[index] = tmp;}
+                    state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
+                    renderForm();
+                });
+            });
+
+            inspectorBody.querySelectorAll('[data-action="page-move-down"]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index || '0', 10);
+                    const current = state.selected?.data || {};
+                    const blocks = collectPageBlocks();
+                    if (index >= blocks.length - 1) return;
+                    {const tmp = blocks[index+1]; blocks[index+1] = blocks[index]; blocks[index] = tmp;}
+                    state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
+                    renderForm();
+                });
+            });
+
+            inspectorBody.querySelectorAll('[data-action="page-focus"]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const block = btn.closest('[data-page-block]');
+                    if (!block) return;
+                    const field = btn.dataset.field;
+                    const input = block.querySelector(`[data-field="${field}"]`);
+                    if (input) input.value = btn.dataset.value || '50';
+                });
+            });
+        };
+const bindImageFocusActions = () => {
             inspectorBody.querySelectorAll('[data-focus-target]').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     const targetId = btn.dataset.focusTarget;
@@ -1710,6 +1979,14 @@
                     instrument: document.getElementById('field-instrument')?.value,
                     imageUrl: buildImageUrl(await buildImageSrc(), document.getElementById('field-image-focus-x')?.value, document.getElementById('field-image-focus-y')?.value, document.getElementById('field-image-scale')?.value)
                 };
+            } else if (state.section === 'pages') {
+                payload.type = 'page';
+                payload.data = {
+                    title: document.getElementById('page-title')?.value || '',
+                    slug: document.getElementById('page-slug')?.value || '',
+                    show_in_nav: (document.getElementById('page-show')?.value || 'no') === 'yes',
+                    blocks: collectPageBlocks()
+                };
             } else if (state.section === 'wkbplus') {
                 alert('Preview for WKB+ er ikke aktiveret endnu.');
                 return;
@@ -1719,7 +1996,7 @@
             }
 
             localStorage.setItem('wkbPreview', JSON.stringify(payload));
-            const pageMap = { news: 'news', events: 'calendar', members: 'about' };
+            const pageMap = { news: 'news', events: 'calendar', members: 'about', pages: 'page' };
             const page = pageMap[state.section] || 'index';
             previewIframe.src = `../index.html?preview=${page}`;
             previewModal.style.display = 'flex';
@@ -1772,9 +2049,17 @@
                         name: document.getElementById('field-name').value.trim(),
                         sort_order: parseInt(document.getElementById('field-order').value || '0', 10)
                     };
-            } else if (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') {
-                const slug = document.getElementById('field-slug').value.trim();
-                const title = document.getElementById('field-title').value.trim();
+                } else if (state.section === 'pages') {
+                    const title = document.getElementById('page-title')?.value?.trim() || '';
+                    const slug = document.getElementById('page-slug')?.value?.trim() || '';
+                    const showNav = (document.getElementById('page-show')?.value || 'no') === 'yes';
+                    const blocks = collectPageBlocks();
+                    payload.data = { page_type: 'page', show_in_nav: showNav, blocks };
+                    payload.title = title;
+                    payload.slug = slug;
+                } else if (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') {
+                    const slug = document.getElementById('field-slug').value.trim();
+                    const title = document.getElementById('field-title').value.trim();
 
                     if (slug === 'home') {
                         const lines = document.getElementById('home-lines')?.value || '';
@@ -1814,7 +2099,7 @@
                     payload.slug = slug;
                 }
 
-                const table = (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') ? 'content_pages' : state.section;
+                const table = (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer' || state.section === 'pages') ? 'content_pages' : state.section;
                 if (item._new) {
                     await supabaseClient.from(table).insert(payload);
                 } else {
@@ -1833,7 +2118,7 @@
         const deleteItem = async () => {
             if (!confirm('Er du sikker på du vil slette dette?')) return;
             try {
-                const table = (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') ? 'content_pages' : state.section;
+                const table = (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer' || state.section === 'pages') ? 'content_pages' : state.section;
                 await supabaseClient.from(table).delete().eq('id', state.selected.id);
                 await loadSection(state.section);
                 renderList();
