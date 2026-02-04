@@ -338,64 +338,7 @@
     </style>
 </head>
 <body>
-    <!-- LOGIN OVERLAY -->
-    <div id="login-overlay" class="login-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:50;">
-        <div style="width:100%; max-width:400px; background:var(--uiPanel); border:1px solid var(--uiBorder); padding:32px; border-radius:8px; text-align:center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
-            <div style="margin-bottom:24px; color:white; font-family:'Cormorant Garamond'; font-size:2rem;">WKB CMS</div>
-            <p style="color:var(--textMuted); margin-bottom:24px;">Log ind for at administrere.</p>
-            <input id="login-username" class="form-input" type="text" placeholder="Brugernavn" style="margin-bottom:12px;">
-            <input id="login-password" class="form-input" type="password" placeholder="Adgangskode" style="margin-bottom:12px;">
-            <button id="login-btn" class="btn btn-save">Log ind</button>
-        </div>
-    </div>
-
-    <!-- MAIN APP -->
-    <div id="app" class="hidden">
-        <nav class="sidebar-left">
-            <div class="brand">
-                <i class="fa-solid fa-bolt"></i> WKB<span>CMS</span>
-            </div>
-            <div class="components-list">
-                <div class="category-title">Indhold</div>
-                <div class="nav-item active" data-section="news"><i class="fa-regular fa-newspaper"></i> <span>Nyheder</span></div>
-                <div class="nav-item" data-section="events"><i class="fa-solid fa-calendar-days"></i> <span>Koncerter</span></div>
-                <div class="nav-item" data-section="members"><i class="fa-solid fa-users"></i> <span>Musikere</span></div>
-                <div class="category-title" style="margin-top:20px;">Struktur</div>
-                <div class="nav-item" data-section="content"><i class="fa-solid fa-layer-group"></i> <span>Sider & Tools</span></div>
-            </div>
-            <div class="brand-footer">
-                <div>By</div>
-                <span>StageReadyWeb</span>
-            </div>
-        </nav>
-
-        <main class="canvas-area">
-            <div class="page-container">
-                <div class="list-header">
-                    <div>
-                        <div id="section-title" style="font-size:2rem; font-family:'Cormorant Garamond'; color:#1A1C1B;">Nyheder</div>
-                        <div id="section-meta" style="color:#666; font-size:0.8rem;">Rediger indhold</div>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button id="new-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ny</button>
-                        <button id="refresh-btn" class="btn btn-outline"><i class="fa-solid fa-rotate-right"></i></button>
-                    </div>
-                </div>
-                <div id="list" class="list"></div>
-            </div>
-        </main>
-
-        <aside class="sidebar-right" id="sidebar-right">
-            <div class="inspector-header">
-                <span id="inspector-title">Egenskaber</span>
-                <button id="sign-out-btn" style="background:none; border:none; color:var(--textMuted); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
-            </div>
-            <div class="inspector-content" id="inspector-body" style="display:none;"></div>
-            <div id="empty-state" style="padding:40px; text-align:center; color:var(--textMuted);">
-                <p>Vælg et element til venstre.</p>
-            </div>
-        </aside>
-    </div>
+    <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -449,6 +392,9 @@
 
         // --- APP LOGIC ---
         const App = () => {
+            const [loginOpen, setLoginOpen] = useState(true);
+            const [loginUser, setLoginUser] = useState('');
+            const [loginPass, setLoginPass] = useState('');
             const [view, setView] = useState('news');
             const [items, setItems] = useState([]);
             const [selected, setSelected] = useState(null);
@@ -465,21 +411,23 @@
             useEffect(() => {
                 const checkSession = async () => {
                     const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (!session) document.getElementById('login-overlay').style.display = 'flex';
+                    setLoginOpen(!session);
                 };
                 checkSession();
             }, []);
 
-            document.getElementById('login-btn').onclick = async () => {
-                const u = document.getElementById('login-username').value;
-                const p = document.getElementById('login-password').value;
+            const handleLogin = async () => {
+                const u = loginUser.trim();
+                const p = loginPass;
+                if (!u || !p) return;
                 const { error } = await supabaseClient.auth.signInWithPassword({ email: `${u}@wkb.local`, password: p });
-                if (!error) document.getElementById('login-overlay').style.display = 'none';
+                if (!error) setLoginOpen(false);
                 else alert('Login fejlede');
             };
 
-            document.getElementById('sign-out-btn').onclick = async () => {
+            const handleSignOut = async () => {
                 await supabaseClient.auth.signOut();
+                setLoginOpen(true);
                 window.location.reload();
             };
 
@@ -771,7 +719,35 @@
             }, [selected]);
 
             return (
-                <div className="flex w-full h-full">
+                <>
+                    {loginOpen && (
+                        <div id="login-overlay" className="login-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                            <div style={{ width: '100%', maxWidth: 400, background: 'var(--uiPanel)', border: '1px solid var(--uiBorder)', padding: 32, borderRadius: 8, textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+                                <div style={{ marginBottom: 24, color: 'white', fontFamily: 'Cormorant Garamond', fontSize: '2rem' }}>WKB CMS</div>
+                                <p style={{ color: 'var(--textMuted)', marginBottom: 24 }}>Log ind for at administrere.</p>
+                                <input
+                                    id="login-username"
+                                    className="form-input"
+                                    type="text"
+                                    placeholder="Brugernavn"
+                                    style={{ marginBottom: 12 }}
+                                    value={loginUser}
+                                    onChange={(e) => setLoginUser(e.target.value)}
+                                />
+                                <input
+                                    id="login-password"
+                                    className="form-input"
+                                    type="password"
+                                    placeholder="Adgangskode"
+                                    style={{ marginBottom: 12 }}
+                                    value={loginPass}
+                                    onChange={(e) => setLoginPass(e.target.value)}
+                                />
+                                <button id="login-btn" className="btn btn-save" onClick={handleLogin}>Log ind</button>
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex w-full h-full">
                     <nav className="sidebar-left">
                         <div className="brand">
                             <i class="fa-solid fa-bolt"></i> WKB<span>CMS</span>
@@ -807,7 +783,7 @@
                     <aside className="sidebar-right" id="sidebar-right" ref={inspectorRef}>
                         <div className="inspector-header">
                             <span id="inspector-title">Egenskaber</span>
-                            <button id="sign-out-btn" style="background:none; border:none; color:var(--textMuted); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
+                            <button id="sign-out-btn" onClick={handleSignOut} style="background:none; border:none; color:var(--textMuted); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
                         </div>
                         <div className="inspector-content" id="inspector-body" style="display:none;"></div>
                         <div id="empty-state" style="padding:40px; text-align:center; color:var(--textMuted);">
@@ -815,6 +791,7 @@
                         </div>
                     </aside>
                 </div>
+                </>
             );
         };
 
