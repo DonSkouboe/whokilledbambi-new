@@ -1153,8 +1153,13 @@
                     metaContent = `<span class="pill">#${item.sort_order ?? 0}</span>`;
                 } else if (state.section === 'pages') {
                     const show = item.data?.show_in_nav;
-                    subtitle = `/${item.slug || ''}`;
-                    metaContent = `<span class="pill">${show ? 'Menu' : 'Skjult'}</span>`;
+                    const slug = item.slug || '';
+                    const href = slug ? `../${encodeURIComponent(slug)}` : '../index.html';
+                    subtitle = `/${slug}`;
+                    metaContent = `
+                        <span class="pill">${show ? 'Menu' : 'Skjult'}</span>
+                        <a class="pill" href="${href}" target="_blank" rel="noopener">Åbn</a>
+                    `;
                 } else if (state.section === 'content' || state.section === 'footer') {
                     subtitle = item.slug || '';
                     metaContent = `<span class="pill">Indhold</span>`;
