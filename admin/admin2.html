@@ -909,6 +909,14 @@
         const clearDraft = (section, id) => {
             try { localStorage.removeItem(draftKey(section, id)); } catch (err) {}
         };
+        const uploadMedia = async (file) => {
+            const ext = (file.name || '').split('.').pop() || 'bin';
+            const path = `${crypto.randomUUID()}.${ext}`;
+            const { error } = await supabaseClient.storage.from('media').upload(path, file, { upsert: false });
+            if (error) throw error;
+            const { data } = supabaseClient.storage.from('media').getPublicUrl(path);
+            return { url: data.publicUrl, path };
+        };
         const parseImageMeta = (url) => {
             if (!url) return { src: '', fx: 50, fy: 50, z: 100 };
             const [base, hash] = url.split('#');
@@ -1860,6 +1868,82 @@ const bindUploadFields = () => {
                 });
             });
         };
+
+        const mediaModal = document.getElementById('media-library-modal');
+        const mediaListEl = document.getElementById('media-list');
+        const mediaSearchEl = document.getElementById('media-search');
+        const mediaRefreshBtn = document.getElementById('media-refresh');
+        const mediaCloseBtn = document.getElementById('media-close');
+        let mediaSelectTarget = null;
+        let mediaCache = [];
+
+        const renderMediaList = (items) => {
+            if (!mediaListEl) return;
+            if (!items.length) {
+                mediaListEl.innerHTML = `<div style="grid-column:1/-1; color:#777; text-align:center; padding:20px;">Ingen filer fundet.</div>`;
+                return;
+            }
+            mediaListEl.innerHTML = items.map((file) => {
+                const url = file.publicUrl || '';
+                const isImage = /\.(png|jpe?g|webp|gif|avif|svg)$/i.test(file.name || '');
+                const thumb = isImage ? `<img src="${url}" style="width:100%; height:120px; object-fit:cover; border-radius:6px; background:#222;">` : `<div style="height:120px; border-radius:6px; background:#222; display:flex; align-items:center; justify-content:center; color:#777;"><i class="fa-solid fa-file"></i></div>`;
+                return `
+                    <button class="media-item" data-url="${url}" style="border:0; background:transparent; text-align:left; cursor:pointer;">
+                        ${thumb}
+                        <div style="margin-top:6px; font-size:0.75rem; color:#aaa; word-break:break-all;">${file.name}</div>
+                    </button>
+                `;
+            }).join('');
+            mediaListEl.querySelectorAll('.media-item').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const url = btn.getAttribute('data-url') || '';
+                    if (!url) return;
+                    if (mediaSelectTarget?.id) {
+                        const el = document.getElementById(mediaSelectTarget.id);
+                        if (el) el.value = url;
+                    } else if (mediaSelectTarget?.field && mediaSelectTarget?.scope) {
+                        const el = mediaSelectTarget.scope.querySelector(`[data-field="${mediaSelectTarget.field}"]`);
+                        if (el) el.value = url;
+                    }
+                    closeMediaLibrary();
+                });
+            });
+        };
+
+        const loadMediaLibrary = async () => {
+            if (!mediaListEl) return;
+            mediaListEl.innerHTML = `<div style="grid-column:1/-1; color:#777; text-align:center; padding:20px;">Indlæser...</div>`;
+            const { data, error } = await supabaseClient.storage.from('media').list('', { limit: 200, sortBy: { column: 'created_at', order: 'desc' } });
+            if (error) {
+                console.error(error);
+                mediaListEl.innerHTML = `<div style="grid-column:1/-1; color:#b66; text-align:center; padding:20px;">Kunne ikke hente filer.</div>`;
+                return;
+            }
+            const mapped = (data || []).filter((f) => f.name && !f.name.endsWith('/')).map((f) => {
+                const { data: urlData } = supabaseClient.storage.from('media').getPublicUrl(f.name);
+                return { ...f, publicUrl: urlData.publicUrl };
+            });
+            mediaCache = mapped;
+            renderMediaList(mapped);
+        };
+
+        const openMediaLibrary = ({ field, scope, id } = {}) => {
+            mediaSelectTarget = id ? { id } : { field, scope };
+            if (mediaModal) mediaModal.style.display = 'flex';
+            loadMediaLibrary();
+        };
+
+        const closeMediaLibrary = () => {
+            if (mediaModal) mediaModal.style.display = 'none';
+        };
+
+        if (mediaCloseBtn) mediaCloseBtn.addEventListener('click', closeMediaLibrary);
+        if (mediaModal) mediaModal.addEventListener('click', (e) => { if (e.target === mediaModal) closeMediaLibrary(); });
+        if (mediaRefreshBtn) mediaRefreshBtn.addEventListener('click', loadMediaLibrary);
+        if (mediaSearchEl) mediaSearchEl.addEventListener('input', () => {
+            const q = (mediaSearchEl.value || '').toLowerCase();
+            renderMediaList(mediaCache.filter((f) => (f.name || '').toLowerCase().includes(q)));
+        });
 
         const bindPlusActions = () => {
             const addBtn = inspectorBody.querySelector('[data-action="plus-add"]');
