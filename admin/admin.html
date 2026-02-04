@@ -1079,14 +1079,41 @@
             if (draft && draft.data) {
                 // Restore fields if draft exists
                 Object.entries(draft.data).forEach(([key, value]) => {
+                    if (key === '__imageData') return;
                     const el = document.getElementById(key);
                     if (el && value !== undefined && value !== null) {
                         el.value = value;
                     }
                 });
+
+                if (draft.data.__imageData) {
+                    const imageField = document.getElementById('field-image');
+                    if (imageField && !imageField.value) {
+                        imageField.value = draft.data.__imageData;
+                    }
+                }
             }
 
             inspectorBody.querySelectorAll('input, textarea, select').forEach((el) => {
+                if (el.type === 'file') {
+                    el.addEventListener('change', () => {
+                        const file = el.files && el.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const data = {};
+                            inspectorBody.querySelectorAll('input, textarea, select').forEach((field) => {
+                                if (field.type === 'file') return;
+                                data[field.id] = field.value;
+                            });
+                            data.__imageData = reader.result;
+                            saveDraft(state.section, id, data);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                    return;
+                }
+
                 el.addEventListener('input', () => {
                     const data = {};
                     inspectorBody.querySelectorAll('input, textarea, select').forEach((field) => {
@@ -1111,10 +1138,17 @@
 
         const previewModal = document.getElementById('preview-modal');
         const previewIframe = document.getElementById('preview-iframe');
+        let previewScrollY = 0;
+        let previewActiveId = null;
 
         const closePreview = () => {
             previewModal.style.display = 'none';
             previewIframe.src = '';
+            window.scrollTo({ top: previewScrollY, behavior: 'instant' });
+            if (previewActiveId) {
+                const el = document.getElementById(previewActiveId);
+                if (el) el.focus();
+            }
         };
 
         document.getElementById('preview-close').addEventListener('click', closePreview);
@@ -1168,6 +1202,8 @@
 
             localStorage.setItem('wkbPreview', JSON.stringify(payload));
             const page = section === 'news' ? 'news' : section === 'events' ? 'calendar' : 'about';
+            previewScrollY = window.scrollY || 0;
+            previewActiveId = document.activeElement ? document.activeElement.id : null;
             previewIframe.src = `../index.html?preview=${page}`;
             previewModal.style.display = 'flex';
         };
