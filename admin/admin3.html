@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WKB Admin</title>
+    
+    <!-- FONTS (Load CRITICAL - Top of file) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- TAILWIND CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- ICONS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- RICH TEXT EDITOR (Quill) -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+    <!-- REACT -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+      tailwind.config = {
+        corePlugins: { preflight: false },
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ['"Cormorant Garamond"', 'serif'],
+              sans: ['"Lato"', 'sans-serif']
+            },
+            colors: {
+              wkbPaper: '#F2EFE9',
+              wkbInk: '#1A1C1B',
+              wkbCoral: '#FF6B4A',
+              wkbSage: '#94A388'
+            }
+          }
+        }
+      };
+    </script>
+
+ <style>
+        /* --- DARK THEME VARIABLES --- */
+        :root {
+            --uiBg: #0F1115;
+            --uiPanel: #181A1F;
+            --uiBorder: #2E323B;
+            --textMain: #F1F5F9;
+            --textMuted: #94A3B8;
+            --accent: #FF6B4A;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--uiBg);
+            color: var(--textMain);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .hidden { display: none !important; }
+
+        /* --- SCROLLBARS --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--uiBg); }
+        ::-webkit-scrollbar-thumb { background: var(--uiBorder); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* --- LAYOUT --- */
+        .sidebar-left {
+            width: 280px;
+            background-color: var(--uiPanel);
+            border-right: 1px solid var(--uiBorder);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+
+        .brand {
+            padding: 24px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            border-bottom: 1px solid var(--uiBorder);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Cormorant Garamond', serif;
+        }
+        .brand span { color: var(--accent); }
+
+        .components-list {
+            padding: 24px 16px;
+            overflow-y: auto;
+            flex: 1 1 auto;
+        }
+
+        .brand-footer {
+            margin-top: auto;
+            padding: 20px;
+            border-top: 1px solid var(--uiBorder);
+            color: var(--textMuted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .brand-footer span { color: var(--accent); font-weight: 600; }
+
+        .category-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--textMuted);
+            margin-bottom: 12px;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            padding-left: 12px;
+        }
+
+        .nav-item {
+            background-color: transparent;
+            border: 1px solid transparent;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+            color: var(--textMuted);
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background-color: var(--uiBorder);
+            color: white;
+        }
+
+        .nav-item.active {
+            background-color: rgba(255, 107, 74, 0.1); 
+            border-color: rgba(255, 107, 74, 0.3);
+            color: var(--accent);
+        }
+        
+        .nav-item i { width: 20px; text-align: center; }
+
+        /* --- CENTER CANVAS --- */
+        .canvas-area {
+            flex: 1;
+            background-color: var(--uiBg);
+            background-image: radial-gradient(#2E323B 1px, transparent 1px);
+            background-size: 24px 24px;
+            overflow-y: auto;
+            padding: 40px 48px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .page-container {
+            width: min(1000px, 100%);
+            background-color: #F2EFE9; 
+            min-height: calc(100vh - 80px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+            padding: 40px;
+            border-radius: 2px;
+        }
+
+        /* --- LIST ITEMS --- */
+        .list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #E5E2DB;
+            padding-bottom: 16px;
+        }
+
+        .list { display: grid; gap: 12px; }
+
+        .list-item {
+            background: white;
+            border: 1px solid #E5E2DB;
+            padding: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .list-item:hover { border-color: var(--accent); transform: translateX(2px); }
+        .list-item.active { border-color: var(--accent); background: #fffaf9; }
+
+        /* --- RIGHT SIDEBAR --- */
+        .sidebar-right {
+            width: 380px;
+            background-color: var(--uiPanel);
+            border-left: 1px solid var(--uiBorder);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .inspector-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--uiBorder);
+            font-weight: 700;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .inspector-content { padding: 24px; overflow-y: auto; flex: 1; }
+
+        /* --- FORMS --- */
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block;
+            color: var(--textMuted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            background-color: var(--uiBg); 
+            border: 1px solid var(--uiBorder);
+            color: white;
+            padding: 10px 12px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .form-input:focus, .form-select:focus { border-color: var(--accent); outline: none; }
+        
+        /* --- RICH TEXT (QUILL) --- */
+        .ql-toolbar { background: var(--uiPanel) !important; border: 1px solid var(--uiBorder) !important; border-radius: 4px 4px 0 0 !important; border-bottom: 1px solid var(--uiBorder) !important; }
+        .ql-container { background: var(--uiBg) !important; border: 1px solid var(--uiBorder) !important; border-top: none !important; color: white !important; min-height: 150px; border-radius: 0 0 4px 4px; }
+        .ql-editor.ql-blank::before { color: #555; font-style: normal; }
+        .ql-stroke { fill: none; stroke: #ccc; }
+        .ql-picker { color: white; }
+        .ql-picker-options { background: var(--uiPanel); border: 1px solid var(--uiBorder); }
+
+        /* --- BUTTONS (THE FIX) --- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-family: 'Lato', sans-serif;
+        }
+        
+        .btn:hover { transform: translateY(-1px); }
+
+        /* Primary Action (Create New) - White button for contrast on list */
+        .btn-primary {
+            background: white;
+            color: var(--wkbInk);
+            border: 1px solid transparent;
+        }
+        .btn-primary:hover { background: #eee; }
+
+        /* Save Action - Coral brand color */
+        .btn-save {
+            background: var(--wkbCoral);
+            color: white;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .btn-save:hover { background: #e05536; }
+
+        /* Outline / Secondary */
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--uiBorder);
+            color: var(--textMuted);
+        }
+        .btn-outline:hover {
+            border-color: var(--textMain);
+            color: var(--textMain);
+        }
+
+        /* Danger */
+        .btn-danger {
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            body { flex-direction: column; overflow: auto; height: auto; }
+            .sidebar-left { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--uiBorder); }
+            .components-list { display: flex; overflow-x: auto; padding: 12px; }
+            .nav-item span { display: inline; }
+            .sidebar-right { width: 100%; border-left: none; border-top: 1px solid var(--uiBorder); height: auto; position: fixed; bottom: 0; left: 0; transform: translateY(100%); transition: transform 0.3s; max-height: 70vh; }
+            .sidebar-right.mobile-open { transform: translateY(0); }
+            .inspector-content { max-height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+    <!-- LOGIN OVERLAY -->
+    <div id="login-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:50;">
+        <div style="width:100%; max-width:400px; background:var(--uiPanel); border:1px solid var(--uiBorder); padding:32px; border-radius:8px; text-align:center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+            <div style="margin-bottom:24px; color:white; font-family:'Cormorant Garamond'; font-size:2rem;">WKB CMS</div>
+            <p style="color:var(--textMuted); margin-bottom:24px;">Log ind for at administrere.</p>
+            <input id="login-username" class="form-input" type="text" placeholder="Brugernavn" style="margin-bottom:12px;">
+            <input id="login-password" class="form-input" type="password" placeholder="Adgangskode" style="margin-bottom:12px;">
+            <button id="login-btn" class="btn-save">Log ind</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app" class="hidden">
+        <nav class="sidebar-left">
+            <div class="brand">
+                <i class="fa-solid fa-bolt"></i> WKB<span>CMS</span>
+            </div>
+            <div class="components-list">
+                <div class="category-title">Indhold</div>
+                <div class="nav-item active" data-section="news"><i class="fa-regular fa-newspaper"></i> <span>Nyheder</span></div>
+                <div class="nav-item" data-section="events"><i class="fa-solid fa-calendar-days"></i> <span>Koncerter</span></div>
+                <div class="nav-item" data-section="members"><i class="fa-solid fa-users"></i> <span>Musikere</span></div>
+                <div class="category-title" style="margin-top:20px;">Struktur</div>
+                <div class="nav-item" data-section="content"><i class="fa-solid fa-layer-group"></i> <span>Sider & Tools</span></div>
+            </div>
+        </nav>
+
+        <main class="canvas-area">
+            <div class="page-container">
+                <div class="list-header">
+                    <div>
+                        <div id="section-title" style="font-size:2rem; font-family:'Cormorant Garamond'; color:#1A1C1B;">Nyheder</div>
+                        <div id="section-meta" style="color:#666; font-size:0.8rem;">Rediger indhold</div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button id="new-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ny</button>
+                        <button id="refresh-btn" class="btn btn-outline"><i class="fa-solid fa-rotate-right"></i></button>
+                    </div>
+                </div>
+                <div id="list" class="list"></div>
+            </div>
+        </main>
+
+        <aside class="sidebar-right" id="sidebar-right">
+            <div class="inspector-header">
+                <span id="inspector-title">Egenskaber</span>
+                <button id="sign-out-btn" style="background:none; border:none; color:var(--textMuted); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+            <div class="inspector-content" id="inspector-body" style="display:none;"></div>
+            <div id="empty-state" style="padding:40px; text-align:center; color:var(--textMuted);">
+                <p>Vælg et element til venstre.</p>
+            </div>
+        </aside>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const SUPABASE_URL = 'https://rtblicylmsfhpeggqmlp.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_7b6MrtzuIoPBz0RiC9YDEg_v6khvC2y';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const sectionMeta = {
+            news: { title: 'Nyheder', subtitle: 'Presse, releases og opdateringer' },
+            events: { title: 'Koncerter', subtitle: 'Tourkalender og billetter' },
+            members: { title: 'Musikere', subtitle: 'Bandmedlemmer og besætning' },
+            content: { title: 'Sider & Tools', subtitle: 'Forside, Om os, Footer' }
+        };
+
+        // --- APP LOGIC ---
+        const App = () => {
+            const [view, setView] = useState('news');
+            const [items, setItems] = useState([]);
+            const [selected, setSelected] = useState(null);
+            const [inspectorOpen, setInspectorOpen] = useState(false);
+            const inspectorRef = useRef(null);
+
+            // UseRef to store Quill instances globally so they persist across re-renders of the form HTML
+            const quillInstances = useRef({});
+
+            useEffect(() => {
+                if (inspectorOpen && inspectorRef.current) {
+                    inspectorRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, [inspectorOpen]);
+
+            // AUTH
+            useEffect(() => {
+                const checkSession = async () => {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (!session) document.getElementById('login-overlay').style.display = 'flex';
+                };
+                checkSession();
+            }, []);
+
+            document.getElementById('login-btn').onclick = async () => {
+                const u = document.getElementById('login-username').value;
+                const p = document.getElementById('login-password').value;
+                const { error } = await supabaseClient.auth.signInWithPassword({ email: `${u}@wkb.local`, password: p });
+                if (!error) document.getElementById('login-overlay').style.display = 'none';
+                else alert('Login fejlede');
+            };
+
+            document.getElementById('sign-out-btn').onclick = async () => {
+                await supabaseClient.auth.signOut();
+                window.location.reload();
+            };
+
+            // DATA FETCHING
+            const loadSection = async (section) => {
+                let query;
+                if (section === 'news') query = supabaseClient.from('news').select('*').order('published_at', { ascending: false });
+                else if (section === 'events') query = supabaseClient.from('events').select('*').order('event_date', { ascending: true });
+                else if (section === 'members') query = supabaseClient.from('members').select('*').order('sort_order', { ascending: true });
+                else if (section === 'content') query = supabaseClient.from('content_pages').select('*');
+                
+                const { data } = await query;
+                setItems(data || []);
+                setView(section);
+                
+                document.getElementById('section-title').innerText = sectionMeta[section].title;
+                document.getElementById('section-meta').innerText = sectionMeta[section].subtitle;
+                closeInspector();
+            };
+
+            // HANDLERS
+            const handleNavClick = (s) => {
+                loadSection(s);
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                document.querySelector(`[data-section="${s}"]`).classList.add('active');
+                closeInspector();
+            };
+
+            const closeInspector = () => {
+                setSelected(null);
+                setInspectorOpen(false);
+                document.getElementById('inspector-body').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+                document.getElementById('inspector-title').innerText = 'Egenskaber';
+                if(window.innerWidth <= 1024) document.getElementById('sidebar-right').classList.remove('mobile-open');
+            };
+
+            const selectItem = (item) => {
+                setSelected(item);
+                document.getElementById('inspector-title').innerText = item.title || item.name || 'Rediger';
+                document.getElementById('inspector-body').style.display = 'block';
+                document.getElementById('empty-state').style.display = 'none';
+                setInspectorOpen(true);
+                if(window.innerWidth <= 1024) document.getElementById('sidebar-right').classList.add('mobile-open');
+            };
+
+            const newItem = () => {
+                setSelected({ _new: true });
+                document.getElementById('inspector-title').innerText = 'Opret ny';
+                document.getElementById('inspector-body').style.display = 'block';
+                document.getElementById('empty-state').style.display = 'none';
+                setInspectorOpen(true);
+                if(window.innerWidth <= 1024) document.getElementById('sidebar-right').classList.add('mobile-open');
+            };
+
+            const saveItem = async () => {
+                const s = view;
+                const item = selected || {};
+                
+                const uploadImage = async (file) => {
+                    const ext = file.name.split('.').pop();
+                    const path = `${crypto.randomUUID()}.${ext}`;
+                    await supabaseClient.storage.from('media').upload(path, file);
+                    const { data } = supabaseClient.storage.from('media').getPublicUrl(path);
+                    return { url: data.publicUrl, path };
+                };
+
+                let payload = {};
+
+                if (s === 'news') {
+                    const title = document.getElementById('field-title')?.value;
+                    // Get content from Quill instance, not React state
+                    const body = quillInstances.current['field-body'] ? quillInstances.current['field-body'].root.innerHTML : '';
+                    
+                    const imageUrl = document.getElementById('field-image')?.value;
+                    const fileInput = document.getElementById('field-upload');
+                    
+                    let finalUrl = imageUrl;
+                    if (fileInput.files[0]) {
+                        const u = await uploadImage(fileInput.files[0]);
+                        finalUrl = u.url;
+                        payload.image_storage_path = u.path;
+                    }
+
+                    payload = {
+                        title, body, image_url: finalUrl,
+                        published_at: new Date(document.getElementById('field-date').value).toISOString()
+                    };
+                } 
+                else if (s === 'events') {
+                    payload = {
+                        title: document.getElementById('field-title').value,
+                        subtitle: document.getElementById('field-subtitle').value,
+                        event_date: new Date(document.getElementById('field-date').value).toISOString(),
+                        location: document.getElementById('field-location').value,
+                        ticket_link: document.getElementById('field-ticket').value,
+                        theme: document.getElementById('field-theme').value
+                    };
+                }
+                else if (s === 'members') {
+                     const imageUrl = document.getElementById('field-image')?.value;
+                     const fileInput = document.getElementById('field-upload');
+                     let finalUrl = imageUrl;
+                     if (fileInput.files[0]) {
+                        const u = await uploadImage(fileInput.files[0]);
+                        finalUrl = u.url;
+                        payload.image_storage_path = u.path;
+                    }
+                    payload = {
+                        name: document.getElementById('field-name').value,
+                        instrument: document.getElementById('field-instrument').value,
+                        image_url: finalUrl,
+                        sort_order: parseInt(document.getElementById('field-order').value || 0)
+                    };
+                }
+                else if (s === 'content') {
+                    const slug = document.getElementById('field-slug')?.value;
+                    
+                    if (slug === 'home') {
+                        payload.data = {
+                            tagline: document.getElementById('home-tagline')?.value,
+                            title_lines: document.getElementById('home-lines')?.value.split(',').map(s=>s.trim()),
+                            highlight_index: parseInt(document.getElementById('home-highlight')?.value) || 2,
+                            cta_label: document.getElementById('home-cta')?.value
+                        };
+                        payload.title = "Forside Indhold";
+                    } 
+                    else if (slug === 'about') {
+                        const bioHtml = quillInstances.current['about-bio'] ? quillInstances.current['about-bio'].root.innerHTML : '';
+                        payload.data = {
+                            intro_title_main: document.getElementById('about-title-main')?.value,
+                            intro_title_emphasis: document.getElementById('about-title-emphasis')?.value,
+                            intro_text: bioHtml,
+                            epk_url: document.getElementById('about-epk')?.value,
+                            photos_url: document.getElementById('about-photos')?.value,
+                            text_url: document.getElementById('about-text')?.value
+                        };
+                        payload.title = "Om os Indhold";
+                    }
+                    else if (slug === 'footer') {
+                        const links = [
+                            { label: 'Instagram', url: document.getElementById('footer-ig')?.value },
+                            { label: 'Facebook', url: document.getElementById('footer-fb')?.value },
+                            { label: 'YouTube', url: document.getElementById('footer-yt')?.value },
+                        ];
+                        payload.data = { social_links: links };
+                        payload.title = "Footer Indhold";
+                    }
+                    else {
+                        payload.data = JSON.parse(document.getElementById('field-json')?.value || '{}');
+                    }
+                    payload.slug = slug;
+                }
+
+                if (item._new) {
+                    await supabaseClient.from(s).insert(payload);
+                } else {
+                    await supabaseClient.from(s).update(payload).eq('id', item.id);
+                }
+                loadSection(view);
+                closeInspector();
+            };
+
+            const previewItem = () => {
+                const p = { type: view, data: {} };
+                if (view === 'news') p.data = { title: document.getElementById('field-title')?.value, body: quillInstances.current['field-body']?.root.innerHTML };
+                localStorage.setItem('wkbPreview', JSON.stringify(p));
+                window.open(`../index.html?preview=${view}`, '_blank');
+            };
+
+            const deleteItem = async () => {
+                if (!confirm('Slet?')) return;
+                await supabaseClient.from(view).delete().eq('id', selected.id);
+                loadSection(view);
+                closeInspector();
+            };
+
+            // RENDERERS
+            useEffect(() => {
+                if (items.length === 0) {
+                    document.getElementById('list').innerHTML = `<div style="text-align:center; padding:20px; color:#999;">Ingen data endnu.</div>`;
+                    return;
+                }
+                document.getElementById('list').innerHTML = items.map(item => `
+                    <div class="list-item" onclick="window.triggerSelect('${item.id}')">
+                        <div style="font-weight:600; color:black; font-family:'Cormorant Garamond'; font-size:1.1rem;">${item.title || item.name || item.slug}</div>
+                        <div style="font-size:0.8rem; color:#666;">${item.published_at || item.event_date || 'Ingen dato'}</div>
+                    </div>
+                `).join('');
+                
+                document.querySelectorAll('.list-item').forEach(el => {
+                    const id = el.getAttribute('onclick').match(/'([^']+)'/)[1];
+                    el.onclick = () => selectItem(items.find(i => i.id === id));
+                });
+            }, [items, selected]);
+
+            // FORM RENDERER
+            useEffect(() => {
+                if (!selected) return;
+                const container = document.getElementById('inspector-body');
+                let html = '';
+
+                const richField = (id, val) => `<div class="form-group"><label class="form-label">Tekst</label><div id="${id}">${val}</div></div>`;
+                const textField = (lbl, id, val, type='text') => `<div class="form-group"><label class="form-label">${lbl}</label><input id="${id}" class="form-input" type="${type}" value="${val || ''}" /></div>`;
+                const dateField = (lbl, id, val) => `<div class="form-group"><label class="form-label">${lbl}</label><input id="${id}" class="form-input" type="datetime-local" value="${val ? val.substring(0,16) : ''}" /></div>`;
+
+                if (view === 'news') {
+                    html += textField('Titel', 'field-title', selected.title);
+                    html += dateField('Dato', 'field-date', selected.published_at);
+                    html += textField('Billede URL', 'field-image', selected.image_url);
+                    html += `<div class="form-group"><label class="form-label">Upload</label><input id="field-upload" class="form-input" type="file" /></div>`;
+                    html += richField('field-body', selected.body);
+                }
+                else if (view === 'events') {
+                    html += textField('Titel', 'field-title', selected.title);
+                    html += textField('Support/Subtitle', 'field-subtitle', selected.subtitle);
+                    html += dateField('Dato', 'field-date', selected.event_date);
+                    html += textField('Lokation', 'field-location', selected.location);
+                    html += textField('Billetlink', 'field-ticket', selected.ticket_link);
+                    html += `<div class="form-group"><label class="form-label">Tema</label><select id="field-theme" class="form-select"><option value="text-wkbInk" ${selected.theme==='text-wkbInk'?'selected':''}>Sort</option><option value="text-wkbCoral" ${selected.theme==='text-wkbCoral'?'selected':''}>Coral</option></select></div>`;
+                }
+                else if (view === 'members') {
+                    html += textField('Navn', 'field-name', selected.name);
+                    html += textField('Instrument', 'field-instrument', selected.instrument);
+                    html += textField('Billede URL', 'field-image', selected.image_url);
+                    html += `<div class="form-group"><label class="form-label">Upload</label><input id="field-upload" class="form-input" type="file" /></div>`;
+                    html += textField('Sortering', 'field-order', selected.sort_order, 'number');
+                }
+                else if (view === 'content') {
+                    const slug = selected.slug || 'home';
+                    html += textField('Slug (Side ID)', 'field-slug', slug, selected._new ? 'text' : 'disabled'); 
+                    
+                    if (slug === 'home') {
+                        const d = selected.data || {};
+                        html += textField('Tagline', 'home-tagline', d.tagline);
+                        html += textField('Overskrifter (kommasepareret)', 'home-lines', (d.title_lines||[]).join(', '));
+                        html += textField('Highlight Index (0,1,2)', 'home-highlight', d.highlight_index);
+                        html += textField('Knap tekst', 'home-cta', d.cta_label);
+                    }
+                    else if (slug === 'about') {
+                        const d = selected.data || {};
+                        html += textField('Intro Hoved', 'about-title-main', d.intro_title_main);
+                        html += textField('Intro Fed', 'about-title-emphasis', d.intro_title_emphasis);
+                        html += richField('about-bio', d.intro_text);
+                        html += `<div class="form-group" style="margin-top:20px; border-top:1px solid var(--uiBorder); padding-top:10px;"><label class="form-label" style="color:var(--accent);">Presse Tools Links</label>`;
+                        html += textField('EPK PDF URL', 'about-epk', d.epk_url);
+                        html += textField('Pressefotos URL', 'about-photos', d.photos_url);
+                        html += textField('Bio Tekst URL', 'about-text', d.text_url);
+                        html += `</div>`;
+                    }
+                    else if (slug === 'footer') {
+                        const d = selected.data || { social_links: [] };
+                        html += `<div class="form-group"><label class="form-label">Instagram URL</label><input id="footer-ig" class="form-input" value="${d.social_links?.[0]?.url||''}" /></div>`;
+                        html += `<div class="form-group"><label class="form-label">Facebook URL</label><input id="footer-fb" class="form-input" value="${d.social_links?.[1]?.url||''}" /></div>`;
+                        html += `<div class="form-group"><label class="form-label">YouTube URL</label><input id="footer-yt" class="form-input" value="${d.social_links?.[2]?.url||''}" /></div>`;
+                    }
+                    else {
+                        html += `<div class="form-group"><label class="form-label">JSON Data</label><textarea id="field-json" class="form-input" style="height:200px; font-family:monospace;">${JSON.stringify(selected.data || {}, null, 2)}</textarea></div>`;
+                    }
+                }
+
+                html += `<div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="btn btn-save" onclick="window.triggerSave()">Gem</button>
+                    <button class="btn btn-outline" onclick="window.triggerPreview()">Preview</button>
+                </div>`;
+                if (!selected._new) html += `<button class="btn btn-danger" onclick="window.triggerDelete()">Slet</button>`;
+                else html += `<button class="btn btn-outline" style="margin-top:10px; width:100%;" onclick="window.triggerCancel()">Annuller</button>`;
+
+                container.innerHTML = html;
+                
+                window.triggerSave = saveItem;
+                window.triggerPreview = previewItem;
+                window.triggerDelete = deleteItem;
+                window.triggerCancel = closeInspector;
+
+                // --- STABLE QUILL INITIALIZATION (OUTSIDE OF RENDER CYCLE TO AVOID REACT CONFLICTS) ---
+                setTimeout(() => {
+                    const richContainers = document.querySelectorAll('.ql-container');
+                    richContainers.forEach(el => {
+                        const id = el.id;
+                        
+                        // Only init Quill if it hasn't been initialized yet for this ID
+                        if (!quillInstances.current[id]) {
+                            const q = new Quill(el, {
+                                theme: 'snow',
+                                placeholder: 'Skriv her...',
+                                modules: { toolbar: [['bold', 'italic'], ['link']] }
+                            });
+                            
+                            // Save instance in ref
+                            quillInstances.current[id] = q;
+                        }
+                        
+                        // Update content (Quill handles this gracefully)
+                        // We find the selected item and populate data if it's a "news" or "about" field
+                        let initialContent = '';
+                        if (view === 'news') initialContent = selected.body;
+                        if (view === 'content') initialContent = (selected.data || {}).intro_text || '';
+                        
+                        if (initialContent && q.root.innerHTML !== initialContent) {
+                            q.root.innerHTML = initialContent;
+                        }
+                    });
+                }, 50);
+
+            }, [selected]);
+
+            return (
+                <div className="flex w-full h-full">
+                    <nav className="sidebar-left">
+                        <div className="brand"><i class="fa-solid fa-bolt"></i> WKB<span>CMS</span></div>
+                        <div className="components-list">
+                            <div className="category-title">Indhold</div>
+                            <div className={`nav-item ${view==='news'?'active':''}`} onClick={() => handleNavClick('news')}><i class="fa-regular fa-newspaper"></i> <span>Nyheder</span></div>
+                            <div className={`nav-item ${view==='events'?'active':''}`} onClick={() => handleNavClick('events')}><i class="fa-solid fa-calendar-days"></i> <span>Koncerter</span></div>
+                            <div className={`nav-item ${view==='members'?'active':''}`} onClick={() => handleNavClick('members')}><i class="fa-solid fa-users"></i> <span>Musikere</span></div>
+                            <div className="category-title" style="margin-top:20px;">Struktur</div>
+                            <div className={`nav-item ${view==='content'?'active':''}`} onClick={() => handleNavClick('content')}><i class="fa-solid fa-layer-group"></i> <span>Sider & Tools</span></div>
+                        </div>
+                    </nav>
+                    <main className="canvas-area">
+                        <div className="page-container">
+                            <div className="list-header">
+                                <div>
+                                    <div id="section-title" style="font-size:2rem; font-family:'Cormorant Garamond'; color:#1A1C1B;">Nyheder</div>
+                                    <div id="section-meta" style="color:#666; font-size:0.8rem;">Rediger indhold</div>
+                                </div>
+                                <div style="display:flex; gap:10px;">
+                                    <button id="new-btn" className="btn btn-primary"><i class="fa-solid fa-plus"></i> Ny</button>
+                                    <button id="refresh-btn" className="btn btn-outline"><i class="fa-solid fa-rotate-right"></i></button>
+                                </div>
+                            </div>
+                            <div id="list" className="list"></div>
+                        </div>
+                    </main>
+                    <aside className="sidebar-right" id="sidebar-right" ref={inspectorRef}>
+                        <div className="inspector-header">
+                            <span id="inspector-title">Egenskaber</span>
+                            <button id="sign-out-btn" style="background:none; border:none; color:var(--textMuted); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
+                        </div>
+                        <div className="inspector-content" id="inspector-body" style="display:none;"></div>
+                        <div id="empty-state" style="padding:40px; text-align:center; color:var(--textMuted);">
+                            <p>Vælg et element til venstre.</p>
+                        </div>
+                    </aside>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
