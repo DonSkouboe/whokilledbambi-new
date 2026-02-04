@@ -413,6 +413,7 @@
       };
 
       const Navigation = ({ currentView, setView, pages }) => {
+        const [menuOpen, setMenuOpen] = useState(false);
         const navItems = [
           { id: 'home', label: 'Forside' },
           { id: 'news', label: 'Nyheder' },
@@ -420,24 +421,65 @@
           { id: 'plus', label: 'WKB+' },
           { id: 'calendar', label: 'Kalender' },
         ];
+        const allItems = [...navItems, ...((pages || []).filter(p => p.data?.show_in_nav).map(p => ({ id: p.slug, label: p.title || p.slug })))];
 
         return (
-          <nav className="fixed top-0 w-full z-40 py-8 px-8 flex justify-between items-start pointer-events-none">
+          <nav className="fixed top-0 w-full z-40 py-8 px-6 md:px-8 flex justify-between items-start pointer-events-none">
             <div className="pointer-events-auto cursor-pointer group" onClick={() => setView('home')}>
               <div className="font-serif text-2xl tracking-tighter font-bold text-wkbInk blend-ink">WhoKilledBambi</div>
               <div className="h-px w-0 group-hover:w-full bg-wkbInk transition-all duration-500"></div>
             </div>
 
-            <ul className="pointer-events-auto flex flex-col md:flex-row gap-2 md:gap-8 items-end md:items-center">
-              {[...navItems, ...((pages || []).filter(p => p.data?.show_in_nav).map(p => ({ id: p.slug, label: p.title || p.slug })))]
-                .map(item => (
+            <ul className="pointer-events-auto hidden md:flex gap-8 items-center">
+              {allItems.map(item => (
                 <li key={item.id}>
-                  <button onClick={() => setView(item.id)} className={`relative text-xs tracking-[0.2em] uppercase transition-all duration-500 ${currentView === item.id ? 'text-wkbInk font-bold' : 'text-gray-400 hover:text-wkbInk'}`}>
+                  <button onClick={() => setView(item.id)} className={`relative text-xs tracking-[0.24em] uppercase transition-all duration-500 ${currentView === item.id ? 'text-wkbInk font-bold' : 'text-wkbInk/60 hover:text-wkbInk'}`}>
                     {item.label}
+                    <span className={`absolute -bottom-2 left-0 h-px bg-wkbInk transition-all duration-500 ${currentView === item.id ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                   </button>
                 </li>
               ))}
             </ul>
+
+            <button
+              className="pointer-events-auto md:hidden flex items-center gap-3 px-4 py-2 rounded-full border border-wkbInk/20 bg-wkbPaper/70 backdrop-blur-sm text-xs uppercase tracking-[0.3em] text-wkbInk"
+              onClick={() => setMenuOpen(true)}
+            >
+              Menu
+              <span className="inline-block w-4 h-4 relative">
+                <span className="absolute left-0 top-0.5 w-4 h-px bg-wkbInk"></span>
+                <span className="absolute left-0 top-2 w-4 h-px bg-wkbInk"></span>
+                <span className="absolute left-0 top-3.5 w-4 h-px bg-wkbInk"></span>
+              </span>
+            </button>
+
+            {menuOpen && (
+              <div className="fixed inset-0 z-50 bg-wkbInk/70 backdrop-blur-md pointer-events-auto">
+                <div className="absolute inset-x-0 top-0 p-6 flex items-center justify-between">
+                  <div className="font-serif text-2xl tracking-tighter font-bold text-wkbPaper">WhoKilledBambi</div>
+                  <button
+                    className="px-4 py-2 rounded-full border border-wkbPaper/30 text-wkbPaper text-xs uppercase tracking-[0.3em]"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Luk
+                  </button>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center px-8">
+                  <ul className="w-full max-w-md space-y-6">
+                    {allItems.map(item => (
+                      <li key={item.id}>
+                        <button
+                          onClick={() => { setView(item.id); setMenuOpen(false); }}
+                          className={`w-full text-left text-3xl font-serif tracking-tight transition-all duration-300 ${currentView === item.id ? 'text-wkbPaper' : 'text-wkbPaper/60 hover:text-wkbPaper'}`}
+                        >
+                          {item.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
           </nav>
         );
       };
@@ -610,19 +652,29 @@
         </section>
       );
 
-      const GridBlock = ({ title, c1_title, c1_body, c2_title, c2_body, c3_title, c3_body }) => (
-        <section className="py-20 px-6 md:px-12 max-w-6xl mx-auto">
-          {title && <h3 className="text-4xl font-serif text-wkbInk mb-10">{title}</h3>}
-          <div className="grid md:grid-cols-3 gap-8">
-            {[{t:c1_title,b:c1_body},{t:c2_title,b:c2_body},{t:c3_title,b:c3_body}].map((c, i) => (
-              <div key={i} className="border border-wkbInk/10 bg-white/40 p-6 rounded-sm">
-                <div className="text-xl font-serif text-wkbInk mb-3">{c.t}</div>
-                <div className="text-sm text-wkbInk/70 leading-relaxed">{c.b}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      );
+      const GridBlock = ({ title, cards, c1_title, c1_body, c2_title, c2_body, c3_title, c3_body }) => {
+        const fallback = [
+          { title: c1_title, body: c1_body },
+          { title: c2_title, body: c2_body },
+          { title: c3_title, body: c3_body }
+        ].filter(c => c.title || c.body);
+        const items = (Array.isArray(cards) && cards.length) ? cards : (fallback.length ? fallback : []);
+        if (!items.length) return null;
+        const cols = items.length >= 3 ? 'md:grid-cols-3' : (items.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-1');
+        return (
+          <section className="py-20 px-6 md:px-12 max-w-6xl mx-auto">
+            {title && <h3 className="text-4xl font-serif text-wkbInk mb-10">{title}</h3>}
+            <div className={`grid ${cols} gap-8`}>
+              {items.map((c, i) => (
+                <div key={i} className="border border-wkbInk/10 bg-white/40 p-6 rounded-sm">
+                  {c.title && <div className="text-xl font-serif text-wkbInk mb-3">{c.title}</div>}
+                  {c.body && <div className="text-sm text-wkbInk/70 leading-relaxed">{c.body}</div>}
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      };
 
       const GalleryBlock = ({ title, g1_url, g1_credit, g2_url, g2_credit, g3_url, g3_credit }) => (
         <section className="py-20 px-6 md:px-12 max-w-6xl mx-auto">
@@ -694,7 +746,7 @@
               if (type === 'image_text') return <MediaTextBlock key={idx} title={block.title} body={block.body} media_url={block.media_url} media_aspect={block.media_aspect} credit={block.credit} layout={block.layout} />;
               if (type === 'video_text') return <MediaTextBlock key={idx} title={block.title} body={block.body} media_url={block.media_url} media_aspect={block.media_aspect} credit={block.credit} layout={block.layout} isVideo />;
               if (type === 'quote') return <QuoteBlock key={idx} quote={block.quote} author={block.author} rating={block.rating} />;
-              if (type === 'grid') return <GridBlock key={idx} title={block.title} c1_title={block.c1_title} c1_body={block.c1_body} c2_title={block.c2_title} c2_body={block.c2_body} c3_title={block.c3_title} c3_body={block.c3_body} />;
+              if (type === 'grid') return <GridBlock key={idx} title={block.title} cards={block.cards} c1_title={block.c1_title} c1_body={block.c1_body} c2_title={block.c2_title} c2_body={block.c2_body} c3_title={block.c3_title} c3_body={block.c3_body} />;
               if (type === 'gallery') return <GalleryBlock key={idx} title={block.title} g1_url={block.g1_url} g1_credit={block.g1_credit} g2_url={block.g2_url} g2_credit={block.g2_credit} g3_url={block.g3_url} g3_credit={block.g3_credit} />;
               if (type === 'cta') return <CtaBlock key={idx} title={block.title} body={block.body} button_label={block.button_label} button_url={block.button_url} />;
               return null;

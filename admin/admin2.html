@@ -1431,22 +1431,31 @@
                             <input class="form-input" data-field="rating" type="number" min="1" max="5" value="${block.rating || ''}">
                         `;
                     } else if (type === 'grid') {
+                        const legacyCards = [
+                            { title: block.c1_title || '', body: block.c1_body || '' },
+                            { title: block.c2_title || '', body: block.c2_body || '' },
+                            { title: block.c3_title || '', body: block.c3_body || '' }
+                        ];
+                        const cards = (Array.isArray(block.cards) && block.cards.length)
+                            ? block.cards
+                            : (legacyCards.filter(c => c.title || c.body).length ? legacyCards.filter(c => c.title || c.body) : [{ title: '', body: '' }]);
                         html += `
                             <label class="form-label">Grid titel</label>
                             <input class="form-input" data-field="title" type="text" value="${block.title || ''}">
                             <div style="height:10px;"></div>
-                            <label class="form-label">Kort 1 titel</label>
-                            <input class="form-input" data-field="c1_title" type="text" value="${block.c1_title || ''}">
-                            <label class="form-label">Kort 1 tekst</label>
-                            <textarea class="form-textarea" data-field="c1_body">${block.c1_body || ''}</textarea>
-                            <label class="form-label">Kort 2 titel</label>
-                            <input class="form-input" data-field="c2_title" type="text" value="${block.c2_title || ''}">
-                            <label class="form-label">Kort 2 tekst</label>
-                            <textarea class="form-textarea" data-field="c2_body">${block.c2_body || ''}</textarea>
-                            <label class="form-label">Kort 3 titel</label>
-                            <input class="form-input" data-field="c3_title" type="text" value="${block.c3_title || ''}">
-                            <label class="form-label">Kort 3 tekst</label>
-                            <textarea class="form-textarea" data-field="c3_body">${block.c3_body || ''}</textarea>
+                            ${cards.map((card, cidx) => `
+                                <div class="form-section" data-grid-card data-index="${cidx}" style="border:1px dashed var(--uiBorder); padding:12px; border-radius:8px; margin-bottom:10px;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                        <label class="form-label" style="margin-bottom:0;">Kort ${cidx + 1}</label>
+                                        <button class="icon-btn" data-action="grid-remove" data-index="${cidx}" title="Fjern kort"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                    <label class="form-label">Kort titel</label>
+                                    <input class="form-input" data-field="card_title" type="text" value="${card.title || ''}">
+                                    <label class="form-label">Kort tekst</label>
+                                    <textarea class="form-textarea" data-field="card_body">${card.body || ''}</textarea>
+                                </div>
+                            `).join('')}
+                            <button class="btn-action" data-action="grid-add"><i class="fa-solid fa-plus"></i> Tilføj kort</button>
                         `;
                     } else if (type === 'gallery') {
                         html += `
@@ -1743,12 +1752,19 @@
                     block.rating = parseInt(get('rating') || '0', 10) || undefined;
                 } else if (type === 'grid') {
                     block.title = get('title');
-                    block.c1_title = get('c1_title');
-                    block.c1_body = get('c1_body');
-                    block.c2_title = get('c2_title');
-                    block.c2_body = get('c2_body');
-                    block.c3_title = get('c3_title');
-                    block.c3_body = get('c3_body');
+                    const cards = [];
+                    blockEl.querySelectorAll('[data-grid-card]').forEach((cardEl) => {
+                        const title = cardEl.querySelector('[data-field="card_title"]')?.value || '';
+                        const body = cardEl.querySelector('[data-field="card_body"]')?.value || '';
+                        if (title || body) cards.push({ title, body });
+                    });
+                    block.cards = cards.length ? cards : [{ title: '', body: '' }];
+                    block.c1_title = block.cards[0]?.title || '';
+                    block.c1_body = block.cards[0]?.body || '';
+                    block.c2_title = block.cards[1]?.title || '';
+                    block.c2_body = block.cards[1]?.body || '';
+                    block.c3_title = block.cards[2]?.title || '';
+                    block.c3_body = block.cards[2]?.body || '';
                 } else if (type === 'gallery') {
                     block.title = get('title');
                     block.g1_url = get('g1_url');
@@ -1782,6 +1798,37 @@
                     renderInspector();
                 });
             }
+
+            inspectorBody.querySelectorAll('[data-action="grid-add"]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const current = state.selected?.data || {};
+                    const blocks = collectPageBlocks();
+                    const blockEl = btn.closest('[data-page-block]');
+                    const index = parseInt(blockEl?.dataset.index || '0', 10);
+                    if (!Number.isFinite(index) || !blocks[index]) return;
+                    const cards = blocks[index].cards || [];
+                    cards.push({ title: '', body: '' });
+                    blocks[index].cards = cards;
+                    state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
+                    renderInspector();
+                });
+            });
+
+            inspectorBody.querySelectorAll('[data-action="grid-remove"]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const blockEl = btn.closest('[data-page-block]');
+                    const index = parseInt(blockEl?.dataset.index || '0', 10);
+                    const cardIndex = parseInt(btn.dataset.index || '0', 10);
+                    if (!Number.isFinite(index) || !Number.isFinite(cardIndex)) return;
+                    const current = state.selected?.data || {};
+                    const blocks = collectPageBlocks();
+                    const cards = blocks[index]?.cards || [];
+                    cards.splice(cardIndex, 1);
+                    blocks[index].cards = cards.length ? cards : [{ title: '', body: '' }];
+                    state.selected = { ...state.selected, title: document.getElementById('page-title')?.value || state.selected?.title, slug: document.getElementById('page-slug')?.value || state.selected?.slug, data: { ...current, blocks } };
+                    renderInspector();
+                });
+            });
 
             inspectorBody.querySelectorAll('[data-action="page-remove"]').forEach((btn) => {
                 btn.addEventListener('click', () => {
