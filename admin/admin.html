@@ -4,6 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhoKilledBambi CMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind = { config: {
+        corePlugins: { preflight: false },
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ['"Cormorant Garamond"', 'serif'],
+              sans: ['"Lato"', 'sans-serif']
+            },
+            colors: {
+              wkbPaper: '#F2EFE9',
+              wkbInk: '#1A1C1B',
+              wkbCoral: '#FF6B4A',
+              wkbSage: '#94A388'
+            }
+          }
+        }
+      }};
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -407,29 +430,49 @@
         }
 
         .preview-body {
-            padding: 20px;
+            padding: 24px;
             display: grid;
             gap: 16px;
         }
 
-        .preview-title {
-            font-size: 2rem;
-            font-weight: 600;
+        .preview-news {
+            display: grid;
+            gap: 24px;
+        }
+
+        .preview-news-meta {
+            border-left: 2px solid #FF6B4A;
+            padding-left: 12px;
         }
 
         .preview-date {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: #666;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .preview-date-value {
+            font-size: 2rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            color: #FF6B4A;
+            line-height: 1.1;
+        }
+
+        .preview-title {
+            font-size: 2.4rem;
+            font-family: 'Cormorant Garamond', serif;
+            color: #1A1C1B;
         }
 
         .preview-image {
             width: 100%;
-            aspect-ratio: 16 / 9;
+            aspect-ratio: 21 / 9;
             background: #eee;
             overflow: hidden;
-            border-radius: 8px;
+            border-radius: 6px;
         }
 
         .preview-image img {
@@ -439,10 +482,17 @@
         }
 
         .preview-text {
-            font-size: 1rem;
-            line-height: 1.6;
+            font-size: 1.05rem;
+            line-height: 1.7;
             color: #333;
             white-space: pre-wrap;
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        .preview-event,
+        .preview-member {
+            display: grid;
+            gap: 16px;
         }
 
         @media (max-width: 600px) {
@@ -632,12 +682,7 @@
                 <span>Preview</span>
                 <button id="preview-close" class="icon-btn" style="border-color: #333; color: #fff;"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="preview-body">
-                <div class="preview-date" id="preview-date"></div>
-                <div class="preview-title" id="preview-title"></div>
-                <div class="preview-image" id="preview-image"></div>
-                <div class="preview-text" id="preview-text"></div>
-            </div>
+            <div class="preview-body" id="preview-body"></div>
         </div>
     </div>
 
@@ -1008,10 +1053,7 @@
         };
 
         const previewModal = document.getElementById('preview-modal');
-        const previewTitle = document.getElementById('preview-title');
-        const previewDate = document.getElementById('preview-date');
-        const previewText = document.getElementById('preview-text');
-        const previewImage = document.getElementById('preview-image');
+        const previewBody = document.getElementById('preview-body');
 
         const closePreview = () => {
             previewModal.style.display = 'none';
@@ -1021,6 +1063,11 @@
         previewModal.addEventListener('click', (e) => {
             if (e.target === previewModal) closePreview();
         });
+
+        const formatDate = (dateVal) => {
+            if (!dateVal) return '';
+            return new Date(dateVal).toLocaleDateString('da-DK', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        };
 
         const previewBySection = () => {
             const section = state.section;
@@ -1032,20 +1079,33 @@
                 const imageUrl = document.getElementById('field-image')?.value?.trim();
                 const fileInput = document.getElementById('field-upload');
 
-                previewTitle.textContent = title;
-                previewDate.textContent = dateVal ? new Date(dateVal).toLocaleDateString('da-DK') : '';
-                previewText.textContent = body;
-
                 let imgSrc = imageUrl || '';
                 if (fileInput && fileInput.files && fileInput.files[0]) {
                     imgSrc = URL.createObjectURL(fileInput.files[0]);
                 }
 
-                if (imgSrc) {
-                    previewImage.innerHTML = `<img src="${imgSrc}" alt="preview" />`;
-                } else {
-                    previewImage.innerHTML = `<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#888;">Intet billede</div>`;
-                }
+                const imageBlock = imgSrc
+                  ? `<div class="mb-8 overflow-hidden rounded-sm aspect-video md:aspect-[21/9]">
+                       <img src="${imgSrc}" alt="${title}" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                     </div>`
+                  : ``;
+
+                previewBody.innerHTML = `
+                  <article class="group grid md:grid-cols-12 gap-8 border-b border-wkbInk/10 pb-8">
+                    <div class="md:col-span-3 md:sticky md:top-32 self-start">
+                      <div class="pl-0 md:pl-6 md:border-l-2 border-wkbCoral/50 py-2">
+                        <span class="block text-xs font-bold uppercase tracking-widest text-wkbInk/40 mb-2">Publiceret</span>
+                        <span class="block text-4xl lg:text-5xl font-serif italic text-wkbCoral blend-ink leading-none">${formatDate(dateVal)}</span>
+                      </div>
+                    </div>
+                    <div class="md:col-span-9">
+                      ${imageBlock}
+                      <h3 class="text-4xl md:text-5xl font-serif text-wkbInk mb-6 group-hover:text-wkbCoral transition-colors duration-300">${title}</h3>
+                      <div class="text-lg md:text-xl font-serif text-wkbInk/80 leading-relaxed max-w-3xl">${body.replace(/
+/g, '<br/>')}</div>
+                    </div>
+                  </article>
+                `;
             }
 
             if (section === 'events') {
@@ -1055,10 +1115,13 @@
                 const location = document.getElementById('field-location')?.value || '';
                 const ticket = document.getElementById('field-ticket')?.value || '';
 
-                previewTitle.textContent = title;
-                previewDate.textContent = dateVal ? new Date(dateVal).toLocaleDateString('da-DK') : '';
-                previewText.textContent = [subtitle, location, ticket].filter(Boolean).join('\n');
-                previewImage.innerHTML = `<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#888;">Ingen billede</div>`;
+                previewBody.innerHTML = `
+                  <div class="preview-event">
+                    <div class="preview-date">${formatDate(dateVal)}</div>
+                    <div class="preview-title">${title}</div>
+                    <div class="preview-text">${[subtitle, location, ticket].filter(Boolean).join('\n')}</div>
+                  </div>
+                `;
             }
 
             if (section === 'members') {
@@ -1067,20 +1130,18 @@
                 const imageUrl = document.getElementById('field-image')?.value?.trim();
                 const fileInput = document.getElementById('field-upload');
 
-                previewTitle.textContent = name;
-                previewDate.textContent = instrument;
-                previewText.textContent = '';
-
                 let imgSrc = imageUrl || '';
                 if (fileInput && fileInput.files && fileInput.files[0]) {
                     imgSrc = URL.createObjectURL(fileInput.files[0]);
                 }
 
-                if (imgSrc) {
-                    previewImage.innerHTML = `<img src="${imgSrc}" alt="preview" />`;
-                } else {
-                    previewImage.innerHTML = `<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#888;">Intet billede</div>`;
-                }
+                previewBody.innerHTML = `
+                  <div class="preview-member">
+                    <div class="preview-image">${imgSrc ? `<img src="${imgSrc}" alt="preview" />` : `<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#888;">Intet billede</div>`}</div>
+                    <div class="preview-title">${name}</div>
+                    <div class="preview-date">${instrument}</div>
+                  </div>
+                `;
             }
 
             previewModal.style.display = 'flex';
