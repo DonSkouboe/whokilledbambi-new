@@ -786,8 +786,6 @@
             inspectorBody.style.display = 'none';
             emptyState.style.display = 'block';
             inspectorTitle.textContent = 'Ingenting valgt';
-                clearDraft(state.section, item._new ? null : item.id);
-                focusList();
             document.getElementById('section-title').textContent = section === 'content' ? 'Side-indhold' : section.charAt(0).toUpperCase() + section.slice(1);
             document.getElementById('section-meta').textContent = sectionMeta[section] || '';
             setActiveNav(section);
