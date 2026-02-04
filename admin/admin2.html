@@ -901,7 +901,8 @@
         // --- RENDERING LIST ---
         const getThumbnail = (item) => {
             if (!item.image_url) return '<i class="fa-solid fa-image"></i>';
-            return `<img src="${item.image_url}" class="item-thumb" alt="thumb">`;
+            const meta = parseImageMeta(item.image_url || '');
+            return `<img src="${meta.src}" class="item-thumb" alt="thumb">`;
         };
 
         const renderList = () => {
@@ -918,7 +919,7 @@
                 let subtitle = '';
 
                 if (state.section === 'news') {
-                                    thumbHtml = getThumbnail(item);
+                    thumbHtml = getThumbnail(item);
                     subtitle = item.published_at ? new Date(item.published_at).toLocaleDateString('da-DK') : 'Ingen dato';
                     metaContent = `<span class="pill">Nyhed</span>`;
                 } else if (state.section === 'events') {
@@ -926,7 +927,7 @@
                     subtitle = item.location || 'Lokation mangler';
                     metaContent = `<span class="pill coral" style="background:${item.theme === 'text-wkbCoral' ? '#ffe5e0' : '#F2EFE9'}; color:${item.theme === 'text-wkbCoral' ? 'var(--wkbCoral)' : '#666'}">${item.title ? 'Billetter' : 'Info'}</span>`;
                 } else if (state.section === 'members') {
-                                    thumbHtml = getThumbnail(item);
+                    thumbHtml = getThumbnail(item);
                     subtitle = item.instrument || 'Instrument';
                     metaContent = `<span class="pill">#${item.sort_order ?? 0}</span>`;
                 } else if (state.section === 'collaborators') {
@@ -1159,7 +1160,7 @@
                 `;
             } else if (state.section === 'members') {
                 const imageMeta = parseImageMeta(item.image_url || '');
-                                html += `
+                html += `
                     <div class="form-section">
                         <label class="form-label">Navn</label>
                         <input id="field-name" class="form-input" type="text" value="${item.name || ''}">
@@ -1172,6 +1173,25 @@
                         <label class="form-label">Billede URL</label>
                         <input id="field-image" class="form-input" type="text" value="${imageMeta.src || ''}">
                         <input id="field-upload" class="form-input" type="file" accept="image/*" style="margin-top:4px;">
+                    </div>
+                    <div class="form-section">
+                        <label class="form-label">Billedfokus (X/Y)</label>
+                        <div style="display:flex; gap:8px; margin-bottom:8px;">
+                            <input id="field-image-focus-x" class="form-input" type="number" min="0" max="100" value="${imageMeta.fx}" placeholder="X (0-100)">
+                            <input id="field-image-focus-y" class="form-input" type="number" min="0" max="100" value="${imageMeta.fy}" placeholder="Y (0-100)">
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button class="icon-btn" data-focus-target="field-image-focus-x" data-value="0">Venstre</button>
+                            <button class="icon-btn" data-focus-target="field-image-focus-x" data-value="50">Center</button>
+                            <button class="icon-btn" data-focus-target="field-image-focus-x" data-value="100">Højre</button>
+                            <button class="icon-btn" data-focus-target="field-image-focus-y" data-value="0">Top</button>
+                            <button class="icon-btn" data-focus-target="field-image-focus-y" data-value="50">Midt</button>
+                            <button class="icon-btn" data-focus-target="field-image-focus-y" data-value="100">Bund</button>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <label class="form-label">Billede zoom (%)</label>
+                        <input id="field-image-scale" class="form-input" type="number" min="80" max="160" value="${imageMeta.z}" placeholder="100">
                     </div>
                     <div class="form-section">
                         <label class="form-label">Sortering</label>

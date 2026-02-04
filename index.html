@@ -147,8 +147,12 @@
 
       const basePath = getBasePath();
 
+      const queryParams = new URLSearchParams(window.location.search);
+      const previewMode = queryParams.get('preview');
+      const redirectPath = queryParams.get('redirect');
+
       const getPageFromPath = () => {
-        let path = window.location.pathname || '';
+        let path = redirectPath ? decodeURIComponent(redirectPath) : (window.location.pathname || '');
         if (basePath !== '/' && path.startsWith(basePath)) {
           path = '/' + path.slice(basePath.length).replace(/^\/+/, '');
         }
@@ -159,7 +163,6 @@
         return slug;
       };
       
-      const previewMode = new URLSearchParams(window.location.search).get('preview');
       const previewPayload = (() => {
         try { return JSON.parse(localStorage.getItem('wkbPreview') || 'null'); } 
         catch (err) { return null; }
@@ -898,6 +901,11 @@
 
         if (loading) return <div className="flex justify-center items-center h-screen text-wkbInk"><Loader size={40} className="text-wkbSage"/></div>;
 
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const upcomingEvents = events.filter(e => e.date && new Date(e.date) >= todayStart);
+        const pastEvents = events.filter(e => e.date && new Date(e.date) < todayStart);
+
         return (
           <div className="min-h-screen pt-32 px-4 max-w-6xl mx-auto fade-in-up pb-20">
             <header className="mb-24 text-center">
@@ -906,34 +914,65 @@
             </header>
             
             <div>
-              {events.length === 0 && (
-                 <div className="text-center py-20">
+              {upcomingEvents.length === 0 && (
+                 <div className="text-center py-16">
                      <p className="font-serif text-2xl italic text-wkbInk/50">Ingen kommende koncerter.</p>
                   </div>
                 )}
 
-                {events.map((event, idx) => (
-                  <a href={event.ticketLink || '#'} key={idx} className="group block border-t border-wkbInk/10 hover:border-wkbInk transition-colors duration-500">
-                    <div className="py-12 flex flex-col md:flex-row md:items-baseline gap-8 px-4 hover:bg-white/30 transition-colors duration-500">
-                      <div className="w-32 shrink-0">
-                        <span className={`text-5xl font-serif italic ${event.theme || 'text-wkbInk'} blend-ink block`}>
-                          {formatDayMonth(event.date)}
-                        </span>
-                        <span className="text-xs font-bold text-wkbInk/30 block mt-2">{formatYear(event.date)}</span>
+              {upcomingEvents.length > 0 && (
+                <>
+                  <div className="text-xs font-bold uppercase tracking-widest text-wkbInk/40 mb-4">Kommende koncerter</div>
+                  {upcomingEvents.map((event, idx) => (
+                    <a href={event.ticketLink || '#'} key={`up-${idx}`} className="group block border-t border-wkbInk/10 hover:border-wkbInk transition-colors duration-500">
+                      <div className="py-12 flex flex-col md:flex-row md:items-baseline gap-8 px-4 hover:bg-white/30 transition-colors duration-500">
+                        <div className="w-32 shrink-0">
+                          <span className={`text-5xl font-serif italic ${event.theme || 'text-wkbInk'} blend-ink block`}>
+                            {formatDayMonth(event.date)}
+                          </span>
+                          <span className="text-xs font-bold text-wkbInk/30 block mt-2">{formatYear(event.date)}</span>
+                        </div>
+                        <div className="grow">
+                          <h3 className="text-3xl md:text-5xl font-serif text-wkbInk mb-2 group-hover:translate-x-4 transition-transform duration-500 ease-out">{event.title}</h3>
+                          <p className="text-sm uppercase tracking-widest text-wkbInk/50 group-hover:translate-x-4 transition-transform duration-500 delay-75">{event.subtitle}</p>
+                        </div>
+                        <div className="w-48 text-right shrink-0">
+                          <span className="text-lg font-serif italic text-wkbInk/60 block mb-2">{event.location}</span>
+                          <span className="text-[10px] uppercase tracking-widest font-bold text-wkbInk opacity-0 group-hover:opacity-100 transition-opacity duration-300">Køb Billet →</span>
+                        </div>
                       </div>
-                      <div className="grow">
-                        <h3 className="text-3xl md:text-5xl font-serif text-wkbInk mb-2 group-hover:translate-x-4 transition-transform duration-500 ease-out">{event.title}</h3>
-                        <p className="text-sm uppercase tracking-widest text-wkbInk/50 group-hover:translate-x-4 transition-transform duration-500 delay-75">{event.subtitle}</p>
-                      </div>
-                      <div className="w-48 text-right shrink-0">
-                        <span className="text-lg font-serif italic text-wkbInk/60 block mb-2">{event.location}</span>
-                        <span className="text-[10px] uppercase tracking-widest font-bold text-wkbInk opacity-0 group-hover:opacity-100 transition-opacity duration-300">Køb Billet →</span>
+                    </a>
+                  ))}
+                  <div className="border-t border-wkbInk/10"></div>
+                </>
+              )}
+
+              {pastEvents.length > 0 && (
+                <>
+                  <div className="text-xs font-bold uppercase tracking-widest text-wkbInk/40 mt-16 mb-4">Tidligere koncerter</div>
+                  {pastEvents.map((event, idx) => (
+                    <div key={`past-${idx}`} className="group block border-t border-wkbInk/10">
+                      <div className="py-10 flex flex-col md:flex-row md:items-baseline gap-8 px-4">
+                        <div className="w-32 shrink-0">
+                          <span className="text-4xl font-serif italic text-wkbInk/60 blend-ink block">
+                            {formatDayMonth(event.date)}
+                          </span>
+                          <span className="text-xs font-bold text-wkbInk/30 block mt-2">{formatYear(event.date)}</span>
+                        </div>
+                        <div className="grow">
+                          <h3 className="text-2xl md:text-4xl font-serif text-wkbInk/70 mb-2">{event.title}</h3>
+                          <p className="text-xs uppercase tracking-widest text-wkbInk/40">{event.subtitle}</p>
+                        </div>
+                        <div className="w-48 text-right shrink-0">
+                          <span className="text-base font-serif italic text-wkbInk/50 block mb-2">{event.location}</span>
+                        </div>
                       </div>
                     </div>
-                  </a>
-                ))}
-                <div className="border-t border-wkbInk/10"></div>
-              </div>
+                  ))}
+                  <div className="border-t border-wkbInk/10"></div>
+                </>
+              )}
+            </div>
           </div>
         );
       };
