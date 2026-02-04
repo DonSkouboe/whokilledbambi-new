@@ -714,6 +714,28 @@
             selected: null
         };
 
+        const draftKey = (section, id) => `wkbDraft:${section}:${id || 'new'}`;
+        const saveDraft = (section, id, data) => {
+            try {
+                localStorage.setItem(draftKey(section, id), JSON.stringify({ id: id || null, data }));
+            } catch (err) {
+                console.warn(err);
+            }
+        };
+        const loadDraft = (section, id) => {
+            try {
+                const raw = localStorage.getItem(draftKey(section, id));
+                return raw ? JSON.parse(raw) : null;
+            } catch (err) {
+                return null;
+            }
+        };
+        const clearDraft = (section, id) => {
+            try {
+                localStorage.removeItem(draftKey(section, id));
+            } catch (err) {}
+        };
+
         const loginOverlay = document.getElementById('login-overlay');
         const appRoot = document.getElementById('app');
         const listEl = document.getElementById('list');
@@ -764,6 +786,7 @@
             inspectorBody.style.display = 'none';
             emptyState.style.display = 'block';
             inspectorTitle.textContent = 'Ingenting valgt';
+                clearDraft(state.section, item._new ? null : item.id);
                 focusList();
             document.getElementById('section-title').textContent = section === 'content' ? 'Side-indhold' : section.charAt(0).toUpperCase() + section.slice(1);
             document.getElementById('section-meta').textContent = sectionMeta[section] || '';
@@ -1038,6 +1061,7 @@
             }
 
             attachFormActions();
+            bindDraft();
         };
 
         const attachFormActions = () => {
@@ -1051,11 +1075,38 @@
             if (previewBtn) previewBtn.addEventListener('click', previewBySection);
         };
 
+        const bindDraft = () => {
+            const id = state.selected?._new ? null : state.selected?.id;
+            const draft = loadDraft(state.section, id);
+            if (draft && draft.data) {
+                // Restore fields if draft exists
+                Object.entries(draft.data).forEach(([key, value]) => {
+                    const el = document.getElementById(key);
+                    if (el && value !== undefined && value !== null) {
+                        el.value = value;
+                    }
+                });
+            }
+
+            inspectorBody.querySelectorAll('input, textarea, select').forEach((el) => {
+                el.addEventListener('input', () => {
+                    const data = {};
+                    inspectorBody.querySelectorAll('input, textarea, select').forEach((field) => {
+                        if (field.type === 'file') return;
+                        data[field.id] = field.value;
+                    });
+                    saveDraft(state.section, id, data);
+                });
+            });
+        };
+
+
         const cancelEdit = () => {
             state.selected = null;
             inspectorBody.style.display = 'none';
             emptyState.style.display = 'block';
             inspectorTitle.textContent = 'Ingenting valgt';
+                clearDraft(state.section, item.id);
                 focusList();
             focusList();
         };
