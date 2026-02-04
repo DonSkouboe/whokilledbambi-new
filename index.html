@@ -165,6 +165,25 @@
         catch (err) { return null; }
       })();
 
+
+      const parseImageMeta = (url) => {
+        if (!url) return { src: '', fx: 50, fy: 50, z: 100 };
+        const [base, hash] = url.split('#');
+        if (!hash) return { src: base, fx: 50, fy: 50, z: 100 };
+        const raw = hash.startsWith('wkb=') ? hash.slice(4) : (hash.startsWith('focus=') ? hash.slice(6) : '');
+        if (!raw) return { src: base, fx: 50, fy: 50, z: 100 };
+        const parts = raw.split(',').map((p) => p.trim());
+        const fx = parseInt(parts[0] || '50', 10);
+        const fy = parseInt(parts[1] || '50', 10);
+        const z = parseInt(parts[2] || '100', 10);
+        return {
+          src: base,
+          fx: Number.isFinite(fx) ? fx : 50,
+          fy: Number.isFinite(fy) ? fy : 50,
+          z: Number.isFinite(z) ? z : 100
+        };
+      };
+
       
       const SUPABASE_URL = 'https://rtblicylmsfhpeggqmlp.supabase.co';
       const SUPABASE_ANON_KEY = 'sb_publishable_7b6MrtzuIoPBz0RiC9YDEg_v6khvC2y';
@@ -544,15 +563,23 @@
                     </div>
                     
                     <div className="md:col-span-9">
-                       {item.imageUrl && (
-                         <div className="mb-8 overflow-hidden rounded-sm aspect-video md:aspect-[21/9]">
-                           <img 
-                             src={item.imageUrl} 
-                             alt={item.title} 
-                             className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" 
-                           />
-                         </div>
-                       )}
+                       {item.imageUrl && (() => {
+                         const meta = parseImageMeta(item.imageUrl);
+                         return (
+                           <div className="mb-8 overflow-hidden rounded-sm aspect-video md:aspect-[21/9]">
+                             <img 
+                               src={meta.src} 
+                               alt={item.title} 
+                               className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" 
+                               style={{
+                                 objectPosition: `${meta.fx}% ${meta.fy}%`,
+                                 transform: `scale(${meta.z / 100})`,
+                                 transformOrigin: `${meta.fx}% ${meta.fy}%`
+                               }}
+                             />
+                           </div>
+                         );
+                       })()}
                        <h3 className="text-4xl md:text-5xl font-serif text-wkbInk mb-6 group-hover:text-wkbCoral transition-colors duration-300">{item.title}</h3>
                        <div className="text-lg md:text-xl text-wkbInk/80 leading-relaxed max-w-3xl">
                          {item.body ? <RichTextRenderer html={item.body} /> : null}
@@ -635,11 +662,21 @@
                {(members || []).map((member, idx) => (
                  <div key={idx} className="group cursor-none">
                    <div className="aspect-[3/4] overflow-hidden mb-4 relative bg-[#E0DCD5]">
-                     <img 
-                       src={member.imageUrl} 
-                       alt={member.name} 
-                       className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 ease-in-out group-hover:scale-105" 
-                     />
+                     {(() => {
+                       const meta = parseImageMeta(member.imageUrl);
+                       return (
+                         <img 
+                           src={meta.src} 
+                           alt={member.name} 
+                           className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 ease-in-out" 
+                           style={{
+                             objectPosition: `${meta.fx}% ${meta.fy}%`,
+                             transform: `scale(${meta.z / 100})`,
+                             transformOrigin: `${meta.fx}% ${meta.fy}%`
+                           }}
+                         />
+                       );
+                     })()}
                      <div className="absolute inset-0 bg-wkbInk/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 mix-blend-multiply"></div>
                    </div>
                    <h4 className="text-2xl font-serif italic text-wkbInk blend-ink">{member.name}</h4>
@@ -743,6 +780,11 @@
                           src={section.image_url}
                           alt={section.title}
                           className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
+                          style={{
+                            objectPosition: `${section.image_focus_x ?? 50}% ${section.image_focus_y ?? 50}%`,
+                            transform: `scale(${(section.image_scale ?? 100) / 100})`,
+                            transformOrigin: `${section.image_focus_x ?? 50}% ${section.image_focus_y ?? 50}%`
+                          }}
                         />
                         {section.image_credit && (
                           <div className="absolute bottom-2 left-4 text-[10px] text-white/70 uppercase tracking-wider">{section.image_credit}</div>
