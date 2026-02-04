@@ -631,6 +631,22 @@
       );
 
       const MediaTextBlock = ({ title, body, media_url, media_aspect, credit, layout = 'image-left', stack = 'image-first', isVideo = false }) => {
+        const hasText = Boolean((title && title.trim()) || (body && body.trim()));
+        if (!hasText) {
+          return (
+            <section className="py-12 px-6 md:px-12 max-w-6xl mx-auto">
+              <div className={`overflow-hidden rounded-sm bg-[#E0DCD5] ${aspectClass(media_aspect)}`}>
+                {isVideo ? (
+                  <video src={media_url} controls className="w-full h-full object-cover" />
+                ) : (
+                  <img src={media_url} alt={title || ''} className="w-full h-full object-cover" />
+                )}
+              </div>
+              {credit && <div className="text-xs uppercase tracking-widest text-wkbInk/50 mt-3">{credit}</div>}
+            </section>
+          );
+        }
+
         const textOrder = stack === 'text-first' ? 'order-1' : 'order-2';
         const mediaOrder = stack === 'text-first' ? 'order-2' : 'order-1';
         const mdTextOrder = layout === 'image-right' ? 'md:order-2' : 'md:order-1';
