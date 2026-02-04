@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WKB Admin</title>
     
-    <!-- FONTS (Load CRITICAL - Top of file) -->
+    <!-- FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -48,7 +48,7 @@
       };
     </script>
 
- <style>
+    <style>
         /* --- DARK THEME VARIABLES --- */
         :root {
             --uiBg: #0F1115;
@@ -328,70 +328,79 @@
         /* --- RESPONSIVE --- */
         @media (max-width: 1024px) {
             body { flex-direction: column; overflow: auto; height: auto; }
-            .sidebar-left { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--uiBorder); }
-            .components-list { display: flex; overflow-x: auto; padding: 12px; }
+            .sidebar-left {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--uiBorder);
+                position: static;
+            }
+            .brand { padding: 18px 20px; }
+            .components-list {
+                display: grid;
+                grid-auto-flow: column;
+                grid-auto-columns: max-content;
+                gap: 8px;
+                overflow-x: auto;
+                padding: 12px 14px 16px;
+            }
+            .category-title { padding-left: 4px; margin-bottom: 6px; }
+            .nav-item { margin-bottom: 0; white-space: nowrap; }
             .nav-item span { display: inline; }
-            .sidebar-right { width: 100%; border-left: none; border-top: 1px solid var(--uiBorder); height: auto; position: fixed; bottom: 0; left: 0; transform: translateY(100%); transition: transform 0.3s; max-height: 70vh; }
+
+            .canvas-area {
+                padding: 24px 20px;
+                align-items: stretch;
+            }
+            .page-container {
+                padding: 28px 24px;
+                min-height: auto;
+            }
+            .list-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .sidebar-right {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid var(--uiBorder);
+                height: auto;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                transform: translateY(100%);
+                transition: transform 0.3s;
+                max-height: 70vh;
+            }
             .sidebar-right.mobile-open { transform: translateY(0); }
             .inspector-content { max-height: 50vh; }
+        }
+
+        @media (max-width: 768px) {
+            .canvas-area { padding: 18px 14px; }
+            .page-container { padding: 22px 18px; }
+            .list-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            .list-header > div:last-child { width: 100%; }
+            .list-header > div:last-child .btn { flex: 1; }
+            .list-header > div:last-child { display: flex; gap: 8px; }
+        }
+
+        @media (max-width: 480px) {
+            .brand { font-size: 1rem; }
+            .components-list { padding: 10px 10px 14px; }
+            .page-container { padding: 18px 14px; }
+            .btn { padding: 9px 14px; font-size: 0.8rem; }
         }
     </style>
 </head>
 <body>
-    <!-- LOGIN OVERLAY -->
-    <div id="login-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:50;">
-        <div style="width:100%; max-width:400px; background:var(--uiPanel); border:1px solid var(--uiBorder); padding:32px; border-radius:8px; text-align:center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
-            <div style="margin-bottom:24px; color:white; font-family:'Cormorant Garamond'; font-size:2rem;">WKB CMS</div>
-            <p style="color:var(--textMuted); margin-bottom:24px;">Log ind for at administrere.</p>
-            <input id="login-username" class="form-input" type="text" placeholder="Brugernavn" style="margin-bottom:12px;">
-            <input id="login-password" class="form-input" type="password" placeholder="Adgangskode" style="margin-bottom:12px;">
-            <button id="login-btn" class="btn btn-save">Log ind</button>
-        </div>
-    </div>
-
-    <!-- MAIN APP -->
-    <div id="app" class="hidden">
-        <nav class="sidebar-left">
-            <div class="brand">
-                <i class="fa-solid fa-bolt"></i> WKB<span>CMS</span>
-            </div>
-            <div class="components-list">
-                <div class="category-title">Indhold</div>
-                <div class="nav-item active" data-section="news"><i class="fa-regular fa-newspaper"></i> <span>Nyheder</span></div>
-                <div class="nav-item" data-section="events"><i class="fa-solid fa-calendar-days"></i> <span>Koncerter</span></div>
-                <div class="nav-item" data-section="members"><i class="fa-solid fa-users"></i> <span>Musikere</span></div>
-                <div class="category-title" style="margin-top:20px;">Struktur</div>
-                <div class="nav-item" data-section="content"><i class="fa-solid fa-layer-group"></i> <span>Sider & Tools</span></div>
-            </div>
-        </nav>
-
-        <main class="canvas-area">
-            <div class="page-container">
-                <div class="list-header">
-                    <div>
-                        <div id="section-title" style="font-size:2rem; font-family:'Cormorant Garamond'; color:#1A1C1B;">Nyheder</div>
-                        <div id="section-meta" style="color:#666; font-size:0.8rem;">Rediger indhold</div>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button id="new-btn" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ny</button>
-                        <button id="refresh-btn" class="btn btn-outline"><i class="fa-solid fa-rotate-right"></i></button>
-                    </div>
-                </div>
-                <div id="list" class="list"></div>
-            </div>
-        </main>
-
-        <aside class="sidebar-right" id="sidebar-right">
-            <div class="inspector-header">
-                <span id="inspector-title">Egenskaber</span>
-                <button id="sign-out-btn" style="background:none; border:none; color:var(--textMuted); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
-            </div>
-            <div class="inspector-content" id="inspector-body" style="display:none;"></div>
-            <div id="empty-state" style="padding:40px; text-align:center; color:var(--textMuted);">
-                <p>Vælg et element til venstre.</p>
-            </div>
-        </aside>
-    </div>
+    <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -406,16 +415,53 @@
             content: { title: 'Sider & Tools', subtitle: 'Forside, Om os, Footer' }
         };
 
+        const state = { section: 'news', items: [], selected: null };
+        
+        // --- RICH TEXT EDITOR ---
+        const RichTextEditor = ({ value, onChange, placeholder }) => {
+            const editorRef = useRef(null);
+            const quillInstance = useRef(null);
+
+            useEffect(() => {
+                if (editorRef.current && !quillInstance.current) {
+                    quillInstance.current = new Quill(editorRef.current, {
+                        theme: 'snow',
+                        placeholder: placeholder,
+                        modules: {
+                            toolbar: [
+                                ['bold', 'italic', 'underline'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                ['link']
+                            ]
+                        }
+                    });
+                    
+                    quillInstance.current.on('text-change', () => {
+                        onChange(quillInstance.current.root.innerHTML);
+                    });
+                }
+                
+                if (quillInstance.current && editorRef.current) {
+                    const currentContent = quillInstance.current.root.innerHTML;
+                    if (currentContent !== value && value !== '<p><br></p>') {
+                        quillInstance.current.root.innerHTML = value;
+                    }
+                }
+            }, [value]);
+
+            return <div ref={editorRef}></div>;
+        };
+
         // --- APP LOGIC ---
         const App = () => {
+            const [loginOpen, setLoginOpen] = useState(true);
+            const [loginUser, setLoginUser] = useState('');
+            const [loginPass, setLoginPass] = useState('');
             const [view, setView] = useState('news');
             const [items, setItems] = useState([]);
             const [selected, setSelected] = useState(null);
             const [inspectorOpen, setInspectorOpen] = useState(false);
             const inspectorRef = useRef(null);
-
-            // UseRef to store Quill instances globally so they persist across re-renders of the form HTML
-            const quillInstances = useRef({});
 
             useEffect(() => {
                 if (inspectorOpen && inspectorRef.current) {
@@ -427,21 +473,23 @@
             useEffect(() => {
                 const checkSession = async () => {
                     const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (!session) document.getElementById('login-overlay').style.display = 'flex';
+                    setLoginOpen(!session);
                 };
                 checkSession();
             }, []);
 
-            document.getElementById('login-btn').onclick = async () => {
-                const u = document.getElementById('login-username').value;
-                const p = document.getElementById('login-password').value;
+            const handleLogin = async () => {
+                const u = loginUser.trim();
+                const p = loginPass;
+                if (!u || !p) return;
                 const { error } = await supabaseClient.auth.signInWithPassword({ email: `${u}@wkb.local`, password: p });
-                if (!error) document.getElementById('login-overlay').style.display = 'none';
+                if (!error) setLoginOpen(false);
                 else alert('Login fejlede');
             };
 
-            document.getElementById('sign-out-btn').onclick = async () => {
+            const handleSignOut = async () => {
                 await supabaseClient.auth.signOut();
+                setLoginOpen(true);
                 window.location.reload();
             };
 
@@ -457,6 +505,7 @@
                 setItems(data || []);
                 setView(section);
                 
+                // Update UI text
                 document.getElementById('section-title').innerText = sectionMeta[section].title;
                 document.getElementById('section-meta').innerText = sectionMeta[section].subtitle;
                 closeInspector();
@@ -513,9 +562,7 @@
 
                 if (s === 'news') {
                     const title = document.getElementById('field-title')?.value;
-                    // Get content from Quill instance, not React state
-                    const body = quillInstances.current['field-body'] ? quillInstances.current['field-body'].root.innerHTML : '';
-                    
+                    const body = document.getElementById('field-body')?.parentElement.querySelector('.ql-editor').innerHTML;
                     const imageUrl = document.getElementById('field-image')?.value;
                     const fileInput = document.getElementById('field-upload');
                     
@@ -562,36 +609,36 @@
                     
                     if (slug === 'home') {
                         payload.data = {
-                            tagline: document.getElementById('home-tagline')?.value,
-                            title_lines: document.getElementById('home-lines')?.value.split(',').map(s=>s.trim()),
-                            highlight_index: parseInt(document.getElementById('home-highlight')?.value) || 2,
-                            cta_label: document.getElementById('home-cta')?.value
+                            tagline: document.getElementById('home-tagline').value,
+                            title_lines: document.getElementById('home-lines').value.split(',').map(s=>s.trim()),
+                            highlight_index: parseInt(document.getElementById('home-highlight').value) || 2,
+                            cta_label: document.getElementById('home-cta').value
                         };
                         payload.title = "Forside Indhold";
                     } 
                     else if (slug === 'about') {
-                        const bioHtml = quillInstances.current['about-bio'] ? quillInstances.current['about-bio'].root.innerHTML : '';
+                        const bioHtml = document.getElementById('about-bio')?.parentElement.querySelector('.ql-editor').innerHTML;
                         payload.data = {
-                            intro_title_main: document.getElementById('about-title-main')?.value,
-                            intro_title_emphasis: document.getElementById('about-title-emphasis')?.value,
+                            intro_title_main: document.getElementById('about-title-main').value,
+                            intro_title_emphasis: document.getElementById('about-title-emphasis').value,
                             intro_text: bioHtml,
-                            epk_url: document.getElementById('about-epk')?.value,
-                            photos_url: document.getElementById('about-photos')?.value,
-                            text_url: document.getElementById('about-text')?.value
+                            epk_url: document.getElementById('about-epk').value,
+                            photos_url: document.getElementById('about-photos').value,
+                            text_url: document.getElementById('about-text').value
                         };
                         payload.title = "Om os Indhold";
                     }
                     else if (slug === 'footer') {
                         const links = [
-                            { label: 'Instagram', url: document.getElementById('footer-ig')?.value },
-                            { label: 'Facebook', url: document.getElementById('footer-fb')?.value },
-                            { label: 'YouTube', url: document.getElementById('footer-yt')?.value },
+                            { label: 'Instagram', url: document.getElementById('footer-ig').value },
+                            { label: 'Facebook', url: document.getElementById('footer-fb').value },
+                            { label: 'YouTube', url: document.getElementById('footer-yt').value },
                         ];
                         payload.data = { social_links: links };
                         payload.title = "Footer Indhold";
                     }
                     else {
-                        payload.data = JSON.parse(document.getElementById('field-json')?.value || '{}');
+                        payload.data = JSON.parse(document.getElementById('field-json').value);
                     }
                     payload.slug = slug;
                 }
@@ -607,7 +654,7 @@
 
             const previewItem = () => {
                 const p = { type: view, data: {} };
-                if (view === 'news') p.data = { title: document.getElementById('field-title')?.value, body: quillInstances.current['field-body']?.root.innerHTML };
+                if (view === 'news') p.data = { title: document.getElementById('field-title')?.value, body: document.getElementById('field-body')?.parentElement.querySelector('.ql-editor').innerHTML };
                 localStorage.setItem('wkbPreview', JSON.stringify(p));
                 window.open(`../index.html?preview=${view}`, '_blank');
             };
@@ -622,7 +669,7 @@
             // RENDERERS
             useEffect(() => {
                 if (items.length === 0) {
-                    document.getElementById('list').innerHTML = `<div style="text-align:center; padding:20px; color:#999;">Ingen data endnu.</div>`;
+                    document.getElementById('list').innerHTML = `<div style="text-align:center; padding:20px; color:#999;">Ingen data.</div>`;
                     return;
                 }
                 document.getElementById('list').innerHTML = items.map(item => `
@@ -672,7 +719,7 @@
                 }
                 else if (view === 'content') {
                     const slug = selected.slug || 'home';
-                    html += textField('Slug (Side ID)', 'field-slug', slug, selected._new ? 'text' : 'disabled'); 
+                    html += textField('Slug (Side ID)', 'field-slug', slug, selected._new ? 'text' : 'disabled');
                     
                     if (slug === 'home') {
                         const d = selected.data || {};
@@ -717,32 +764,16 @@
                 window.triggerDelete = deleteItem;
                 window.triggerCancel = closeInspector;
 
-                // --- STABLE QUILL INITIALIZATION (OUTSIDE OF RENDER CYCLE TO AVOID REACT CONFLICTS) ---
+                // Init Rich Text
                 setTimeout(() => {
                     const richContainers = document.querySelectorAll('.ql-container');
                     richContainers.forEach(el => {
-                        const id = el.id;
-                        
-                        // Only init Quill if it hasn't been initialized yet for this ID
-                        if (!quillInstances.current[id]) {
+                        if (!el.querySelector('.ql-toolbar')) {
                             const q = new Quill(el, {
                                 theme: 'snow',
                                 placeholder: 'Skriv her...',
                                 modules: { toolbar: [['bold', 'italic'], ['link']] }
                             });
-                            
-                            // Save instance in ref
-                            quillInstances.current[id] = q;
-                        }
-                        
-                        // Update content (Quill handles this gracefully)
-                        // We find the selected item and populate data if it's a "news" or "about" field
-                        let initialContent = '';
-                        if (view === 'news') initialContent = selected.body;
-                        if (view === 'content') initialContent = (selected.data || {}).intro_text || '';
-                        
-                        if (initialContent && q.root.innerHTML !== initialContent) {
-                            q.root.innerHTML = initialContent;
                         }
                     });
                 }, 50);
@@ -750,28 +781,62 @@
             }, [selected]);
 
             return (
-                <div className="flex w-full h-full">
+                <>
+                    {loginOpen && (
+                        <div id="login-overlay" className="login-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                            <div style={{ width: '100%', maxWidth: 400, background: 'var(--uiPanel)', border: '1px solid var(--uiBorder)', padding: 32, borderRadius: 8, textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+                                <div style={{ marginBottom: 24, color: 'white', fontFamily: 'Cormorant Garamond', fontSize: '2rem' }}>WKB CMS</div>
+                                <p style={{ color: 'var(--textMuted)', marginBottom: 24 }}>Log ind for at administrere.</p>
+                                <input
+                                    id="login-username"
+                                    className="form-input"
+                                    type="text"
+                                    placeholder="Brugernavn"
+                                    style={{ marginBottom: 12 }}
+                                    value={loginUser}
+                                    onChange={(e) => setLoginUser(e.target.value)}
+                                />
+                                <input
+                                    id="login-password"
+                                    className="form-input"
+                                    type="password"
+                                    placeholder="Adgangskode"
+                                    style={{ marginBottom: 12 }}
+                                    value={loginPass}
+                                    onChange={(e) => setLoginPass(e.target.value)}
+                                />
+                                <button id="login-btn" className="btn btn-save" onClick={handleLogin}>Log ind</button>
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex w-full h-full">
                     <nav className="sidebar-left">
-                        <div className="brand"><i class="fa-solid fa-bolt"></i> WKB<span>CMS</span></div>
+                        <div className="brand">
+                            <i className="fa-solid fa-bolt"></i> WKB<span>CMS</span>
+                        </div>
                         <div className="components-list">
                             <div className="category-title">Indhold</div>
-                            <div className={`nav-item ${view==='news'?'active':''}`} onClick={() => handleNavClick('news')}><i class="fa-regular fa-newspaper"></i> <span>Nyheder</span></div>
-                            <div className={`nav-item ${view==='events'?'active':''}`} onClick={() => handleNavClick('events')}><i class="fa-solid fa-calendar-days"></i> <span>Koncerter</span></div>
-                            <div className={`nav-item ${view==='members'?'active':''}`} onClick={() => handleNavClick('members')}><i class="fa-solid fa-users"></i> <span>Musikere</span></div>
-                            <div className="category-title" style="margin-top:20px;">Struktur</div>
-                            <div className={`nav-item ${view==='content'?'active':''}`} onClick={() => handleNavClick('content')}><i class="fa-solid fa-layer-group"></i> <span>Sider & Tools</span></div>
+                            <div className={`nav-item ${view==='news'?'active':''}`} onClick={() => handleNavClick('news')}><i className="fa-regular fa-newspaper"></i> <span>Nyheder</span></div>
+                            <div className={`nav-item ${view==='events'?'active':''}`} onClick={() => handleNavClick('events')}><i className="fa-solid fa-calendar-days"></i> <span>Koncerter</span></div>
+                            <div className={`nav-item ${view==='members'?'active':''}`} onClick={() => handleNavClick('members')}><i className="fa-solid fa-users"></i> <span>Musikere</span></div>
+                            <div className="category-title" style={{ marginTop: 20 }}>Struktur</div>
+                            <div className={`nav-item ${view==='content'?'active':''}`} onClick={() => handleNavClick('content')}><i className="fa-solid fa-layer-group"></i> <span>Sider & Tools</span></div>
+                        </div>
+                        <div className="brand-footer">
+                            <div>By</div>
+                            <span>StageReadyWeb</span>
                         </div>
                     </nav>
                     <main className="canvas-area">
                         <div className="page-container">
                             <div className="list-header">
                                 <div>
-                                    <div id="section-title" style="font-size:2rem; font-family:'Cormorant Garamond'; color:#1A1C1B;">Nyheder</div>
-                                    <div id="section-meta" style="color:#666; font-size:0.8rem;">Rediger indhold</div>
+                                        <div id="section-title" style={{ fontSize: '2rem', fontFamily: 'Cormorant Garamond', color: '#1A1C1B' }}>Nyheder</div>
+                                        <div id="section-meta" style={{ color: '#666', fontSize: '0.8rem' }}>Rediger indhold</div>
                                 </div>
-                                <div style="display:flex; gap:10px;">
-                                    <button id="new-btn" className="btn btn-primary"><i class="fa-solid fa-plus"></i> Ny</button>
-                                    <button id="refresh-btn" className="btn btn-outline"><i class="fa-solid fa-rotate-right"></i></button>
+                                <div style={{ display: 'flex', gap: 10 }}>
+                                    <button id="new-btn" className="btn btn-primary"><i className="fa-solid fa-plus"></i> Ny</button>
+                                    <button id="refresh-btn" className="btn btn-outline"><i className="fa-solid fa-rotate-right"></i></button>
                                 </div>
                             </div>
                             <div id="list" className="list"></div>
@@ -780,14 +845,15 @@
                     <aside className="sidebar-right" id="sidebar-right" ref={inspectorRef}>
                         <div className="inspector-header">
                             <span id="inspector-title">Egenskaber</span>
-                            <button id="sign-out-btn" style="background:none; border:none; color:var(--textMuted); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
+                            <button id="sign-out-btn" onClick={handleSignOut} style={{ background: 'none', border: 'none', color: 'var(--textMuted)', cursor: 'pointer' }}><i className="fa-solid fa-right-from-bracket"></i></button>
                         </div>
-                        <div className="inspector-content" id="inspector-body" style="display:none;"></div>
-                        <div id="empty-state" style="padding:40px; text-align:center; color:var(--textMuted);">
+                        <div className="inspector-content" id="inspector-body" style={{ display: 'none' }}></div>
+                        <div id="empty-state" style={{ padding: 40, textAlign: 'center', color: 'var(--textMuted)' }}>
                             <p>Vælg et element til venstre.</p>
                         </div>
                     </aside>
                 </div>
+                </>
             );
         };
 
