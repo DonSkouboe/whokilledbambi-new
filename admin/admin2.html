@@ -574,6 +574,12 @@
                 box-shadow: 0 -12px 30px rgba(0,0,0,0.35);
                 pointer-events: auto;
             }
+            .preview-overlay.docked.mobile-collapsed .preview-card {
+                height: 14vh;
+            }
+            .preview-overlay.docked.mobile-collapsed .preview-body {
+                display: none;
+            }
             .preview-resize {
                 display: none;
             }
@@ -590,6 +596,20 @@
             font-size: 0.8rem;
             font-family: 'Space Grotesk', monospace;
             position: relative;
+        }
+        .preview-toggle {
+            position: absolute;
+            left: 12px;
+            top: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: #bbb;
+            cursor: pointer;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
         }
         
         .preview-close {
@@ -848,6 +868,7 @@
         <div class="preview-card">
             <div class="preview-header">
                 <span>LIVE PREVIEW</span>
+                <button id="preview-toggle" class="preview-toggle">Vis</button>
                 <button id="preview-close" class="preview-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="preview-resize" class="preview-resize" title="Træk for at ændre størrelse"></div>
@@ -2190,6 +2211,22 @@ const bindUploadFields = () => {
         const previewModal = document.getElementById('preview-modal');
         const previewIframe = document.getElementById('preview-iframe');
         const previewResize = document.getElementById('preview-resize');
+        const previewToggle = document.getElementById('preview-toggle');
+        let previewCollapsed = false;
+
+        const syncPreviewToggle = () => {
+            if (!previewToggle) return;
+            const isMobile = window.innerWidth <= 1024;
+            previewToggle.style.display = isMobile ? 'inline-flex' : 'none';
+            previewToggle.textContent = previewCollapsed ? 'Vis' : 'Skjul';
+        };
+
+        const setPreviewCollapsed = (value) => {
+            previewCollapsed = value;
+            if (previewCollapsed) previewModal.classList.add('mobile-collapsed');
+            else previewModal.classList.remove('mobile-collapsed');
+            syncPreviewToggle();
+        };
 
         const updateLivePreview = async () => {
             if (!isLivePreviewEnabled()) return;
@@ -2206,6 +2243,7 @@ const bindUploadFields = () => {
             localStorage.setItem('wkbPreview', JSON.stringify(payload));
             const url = `../index.html?preview=page&ts=${Date.now()}`;
             previewModal.classList.add('docked');
+            if (window.innerWidth <= 1024) setPreviewCollapsed(true);
             previewIframe.src = url;
             previewModal.style.display = 'flex';
         };
@@ -2255,6 +2293,13 @@ const bindUploadFields = () => {
         document.getElementById('preview-close').addEventListener('click', closePreview);
         previewModal.addEventListener('click', (e) => { if (e.target === previewModal) closePreview(); });
         initPreviewResize();
+        if (previewToggle) {
+            previewToggle.addEventListener('click', () => {
+                setPreviewCollapsed(!previewCollapsed);
+            });
+        }
+        window.addEventListener('resize', syncPreviewToggle);
+        syncPreviewToggle();
 
         const buildImageSrc = async () => {
             const fileInput = document.getElementById('field-upload');
