@@ -520,7 +520,7 @@
         .preview-overlay.docked {
             background: transparent;
             align-items: stretch;
-            justify-content: flex-end;
+            justify-content: flex-start;
             pointer-events: none;
         }
 
@@ -533,7 +533,7 @@
         .preview-overlay.docked .preview-card {
             width: var(--preview-width, min(46vw, 760px));
             height: calc(100vh - 120px);
-            margin: 60px 24px 60px 0;
+            margin: 60px 0 60px 24px;
             border-radius: 14px;
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.08);
@@ -561,15 +561,18 @@
         }
         @media (max-width: 1024px) {
             .preview-overlay.docked {
-                background: #000;
-                pointer-events: auto;
+                background: transparent;
+                align-items: flex-end;
+                justify-content: stretch;
+                pointer-events: none;
             }
             .preview-overlay.docked .preview-card {
                 width: 100%;
-                height: 100%;
-                margin: 0;
-                border-radius: 0;
-                box-shadow: none;
+                height: 42vh;
+                margin: 0 0 0 0;
+                border-radius: 12px 12px 0 0;
+                box-shadow: 0 -12px 30px rgba(0,0,0,0.35);
+                pointer-events: auto;
             }
             .preview-resize {
                 display: none;
@@ -908,6 +911,13 @@
         };
         const clearDraft = (section, id) => {
             try { localStorage.removeItem(draftKey(section, id)); } catch (err) {}
+        };
+        const livePreviewKey = 'wkbLivePreviewEnabled';
+        const getLivePreviewPref = () => {
+            try { return localStorage.getItem(livePreviewKey) !== 'false'; } catch (err) { return true; }
+        };
+        const setLivePreviewPref = (value) => {
+            try { localStorage.setItem(livePreviewKey, value ? 'true' : 'false'); } catch (err) {}
         };
         const uploadMedia = async (file) => {
             const ext = (file.name || '').split('.').pop() || 'bin';
@@ -1325,7 +1335,7 @@
                     </div>
                     <div class="form-section">
                         <label class="form-label" style="display:flex; align-items:center; gap:10px;">
-                            <input id="page-live-preview" type="checkbox" checked>
+                            <input id="page-live-preview" type="checkbox" ${getLivePreviewPref() ? 'checked' : ''}>
                             Live preview
                         </label>
                         <div class="form-help">Opdaterer automatisk forhåndsvisningen mens du skriver.</div>
@@ -2107,6 +2117,7 @@ const bindUploadFields = () => {
             const toggle = document.getElementById('page-live-preview');
             if (toggle) {
                 toggle.addEventListener('change', () => {
+                    setLivePreviewPref(toggle.checked);
                     if (toggle.checked) updateLivePreview();
                     else closePreview();
                 });
