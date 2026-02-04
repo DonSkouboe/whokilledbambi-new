@@ -718,6 +718,12 @@
                 <div class="nav-item" data-section="collaborators">
                     <i class="fa-solid fa-handshake"></i> <span>Samarbejde</span>
                 </div>
+                <div class="nav-item" data-section="wkbplus">
+                    <i class="fa-solid fa-plus"></i> <span>WKB+</span>
+                </div>
+                <div class="nav-item" data-section="footer">
+                    <i class="fa-solid fa-share-nodes"></i> <span>Socials</span>
+                </div>
                 <div class="nav-item" data-section="content">
                     <i class="fa-solid fa-code"></i> <span>Sider (JSON)</span>
                 </div>
@@ -809,6 +815,8 @@
             events: { title: 'Koncerter', subtitle: 'Tourkalender og billetter' },
             members: { title: 'Musikere', subtitle: 'Bandmedlemmer og besætning' },
             collaborators: { title: 'Samarbejdspartnere', subtitle: 'Marquee liste' },
+            wkbplus: { title: 'WKB+', subtitle: 'Samarbejder og indhold' },
+            footer: { title: 'Socials', subtitle: 'Footer links' },
             content: { title: 'Sider', subtitle: 'JSON Struktur og indhold' }
         };
 
@@ -879,10 +887,35 @@
             const meta = sectionMeta[section];
             sectionTitle.textContent = meta.title;
             sectionMetaText.textContent = meta.subtitle;
+
+            const newBtn = document.getElementById('new-btn');
+            if (newBtn) {
+                newBtn.style.display = (section === 'wkbplus' || section === 'footer') ? 'none' : 'inline-flex';
+            }
             
             setActiveNav(section);
             await loadSection(section);
             renderList();
+
+            if (section === 'wkbplus') {
+                const plusItem = state.items.find((i) => i.slug === 'plus') || state.items[0];
+                if (plusItem) {
+                    selectItem(plusItem);
+                } else {
+                    state.selected = { _new: true, slug: 'plus', title: 'WKB+', data: {} };
+                    selectItem(state.selected);
+                }
+            }
+
+            if (section === 'footer') {
+                const footerItem = state.items.find((i) => i.slug === 'footer') || state.items[0];
+                if (footerItem) {
+                    selectItem(footerItem);
+                } else {
+                    state.selected = { _new: true, slug: 'footer', title: 'Footer', data: { social_links: [] } };
+                    selectItem(state.selected);
+                }
+            }
         };
 
         const loadSection = async (section) => {
@@ -891,11 +924,75 @@
             else if (section === 'events') query = supabaseClient.from('events').select('*').order('event_date', { ascending: true });
             else if (section === 'members') query = supabaseClient.from('members').select('*').order('sort_order', { ascending: true });
             else if (section === 'collaborators') query = supabaseClient.from('collaborators').select('*').order('sort_order', { ascending: true });
+            else if (section === 'wkbplus') query = supabaseClient.from('content_pages').select('*').eq('slug', 'plus').order('slug', { ascending: true });
+            else if (section === 'footer') query = supabaseClient.from('content_pages').select('*').eq('slug', 'footer').order('slug', { ascending: true });
             else query = supabaseClient.from('content_pages').select('*').order('slug', { ascending: true });
 
             const { data, error } = await query;
             if (error) { console.error(error); state.items = []; return; }
             state.items = data || [];
+        };
+
+        const ensureContentPages = async () => {
+            const { data, error } = await supabaseClient.from('content_pages').select('id, slug, title, data');
+            if (error) { console.warn(error); return; }
+            const existing = new Set((data || []).map((r) => r.slug));
+            const seeds = [];
+            if (!existing.has('home')) {
+                seeds.push({
+                    slug: 'home',
+                    title: 'Forside Indhold',
+                    data: {
+                        tagline: 'Det Danske Strygerensemble',
+                        title_lines: ['WHO', 'KILLED', 'BAMBI'],
+                        highlight_index: 2,
+                        highlight_class: 'text-wkbCoral',
+                        cta_label: 'Oplev Koncerter'
+                    }
+                });
+            }
+            if (!existing.has('about')) {
+                seeds.push({
+                    slug: 'about',
+                    title: 'Om os Indhold',
+                    data: {
+                        intro_title_main: 'Klassisk elegance.',
+                        intro_title_emphasis: 'Moderne vildskab.',
+                        intro_text: 'Siden 2009 har vi udforsket grænserne for, hvad et strygerensemble kan være.'
+                    }
+                });
+            }
+            if (!existing.has('plus')) {
+                seeds.push({
+                    slug: 'plus',
+                    title: 'WKB+',
+                    data: {
+                        header_title: 'WKB+',
+                        header_subtitle: 'Udvalgte Samarbejder',
+                        sections: [
+                            { id: 'section-1', layout: 'image-left' },
+                            { id: 'section-2', layout: 'video-right' }
+                        ],
+                        info_title: 'Hvad er Who Killed Bambi+?',
+                        info_paragraphs: [],
+                        info_note: ''
+                    }
+                });
+            }
+            if (!existing.has('footer')) {
+                seeds.push({
+                    slug: 'footer',
+                    title: 'Footer Indhold',
+                    data: { social_links: [
+                        { label: 'Instagram', url: '' },
+                        { label: 'Facebook', url: '' },
+                        { label: 'YouTube', url: '' }
+                    ] }
+                });
+            }
+            if (seeds.length) {
+                await supabaseClient.from('content_pages').insert(seeds);
+            }
         };
 
         // --- RENDERING LIST ---
@@ -934,6 +1031,14 @@
                     thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-user-tag"></i></div>`;
                     subtitle = 'Samarbejde';
                     metaContent = `<span class="pill">#${item.sort_order ?? 0}</span>`;
+                } else if (state.section === 'wkbplus') {
+                    thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-plus"></i></div>`;
+                    subtitle = 'WKB+';
+                    metaContent = `<span class="pill">Side</span>`;
+                } else if (state.section === 'footer') {
+                    thumbHtml = `<div class="item-thumb"><i class="fa-solid fa-share-nodes"></i></div>`;
+                    subtitle = 'Footer links';
+                    metaContent = `<span class="pill">Socials</span>`;
                 } else {
                     metaContent = `<span class="pill">JSON</span>`;
                 }
@@ -1209,7 +1314,7 @@
                         <input id="field-order" class="form-input" type="number" value="${item.sort_order ?? 0}">
                     </div>
                 `;
-            } else if (state.section === 'content') {
+            } else if (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') {
                 const slug = item.slug || '';
                 const data = item.data || {};
                 contentSlug = slug;
@@ -1217,7 +1322,7 @@
                 html += `
                     <div class="form-section">
                         <label class="form-label">Slug (URL)</label>
-                        <input id="field-slug" class="form-input" type="text" value="${slug}" ${item._new ? '' : 'disabled'}>
+                        <input id="field-slug" class="form-input" type="text" value="${slug}" ${item._new && state.section !== 'wkbplus' && state.section !== 'footer' ? '' : 'disabled'}>
                     </div>
                     <div class="form-section">
                         <label class="form-label">Titel</label>
@@ -1394,10 +1499,12 @@
                 }
             }
 
+            const showDelete = !item._new && state.section !== 'wkbplus' && state.section !== 'footer';
+
             html += `
                 <button class="btn-action" data-action="preview"><i class="fa-solid fa-eye"></i> Forhåndsvisning</button>
                 <button class="btn-action btn-save" data-action="save"><i class="fa-solid fa-floppy-disk"></i> Gem Ændringer</button>
-                ${!item._new ? `<button class="btn-action btn-delete" data-action="delete"><i class="fa-solid fa-trash"></i> Slet</button>` : ''}
+                ${showDelete ? `<button class="btn-action btn-delete" data-action="delete"><i class="fa-solid fa-trash"></i> Slet</button>` : ''}
                 <button class="btn-action" data-action="cancel" style="background:transparent; border:1px solid var(--uiBorder); color:var(--textMuted); margin-top:8px;">Annuller</button>
             `;
 
@@ -1603,6 +1710,9 @@
                     instrument: document.getElementById('field-instrument')?.value,
                     imageUrl: buildImageUrl(await buildImageSrc(), document.getElementById('field-image-focus-x')?.value, document.getElementById('field-image-focus-y')?.value, document.getElementById('field-image-scale')?.value)
                 };
+            } else if (state.section === 'wkbplus') {
+                alert('Preview for WKB+ er ikke aktiveret endnu.');
+                return;
             } else {
                 alert('Preview er kun tilgængeligt for visuelle elementer.');
                 return;
@@ -1662,9 +1772,9 @@
                         name: document.getElementById('field-name').value.trim(),
                         sort_order: parseInt(document.getElementById('field-order').value || '0', 10)
                     };
-                } else if (state.section === 'content') {
-                    const slug = document.getElementById('field-slug').value.trim();
-                    const title = document.getElementById('field-title').value.trim();
+            } else if (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') {
+                const slug = document.getElementById('field-slug').value.trim();
+                const title = document.getElementById('field-title').value.trim();
 
                     if (slug === 'home') {
                         const lines = document.getElementById('home-lines')?.value || '';
@@ -1704,10 +1814,11 @@
                     payload.slug = slug;
                 }
 
+                const table = (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') ? 'content_pages' : state.section;
                 if (item._new) {
-                    await supabaseClient.from(state.section).insert(payload);
+                    await supabaseClient.from(table).insert(payload);
                 } else {
-                    await supabaseClient.from(state.section).update(payload).eq('id', item.id);
+                    await supabaseClient.from(table).update(payload).eq('id', item.id);
                 }
 
                 await loadSection(state.section);
@@ -1722,7 +1833,8 @@
         const deleteItem = async () => {
             if (!confirm('Er du sikker på du vil slette dette?')) return;
             try {
-                await supabaseClient.from(state.section).delete().eq('id', state.selected.id);
+                const table = (state.section === 'content' || state.section === 'wkbplus' || state.section === 'footer') ? 'content_pages' : state.section;
+                await supabaseClient.from(table).delete().eq('id', state.selected.id);
                 await loadSection(state.section);
                 renderList();
                 cancelEdit();
@@ -1770,8 +1882,11 @@
             else { alert('Bruger oprettet'); adminModal.style.display = 'none'; }
         });
 
-        supabaseClient.auth.getSession().then(({ data }) => {
-            if (data.session) showLogin(false);
+        supabaseClient.auth.getSession().then(async ({ data }) => {
+            if (data.session) {
+                showLogin(false);
+                await ensureContentPages();
+            }
         });
 
     </script>
