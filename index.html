@@ -463,17 +463,20 @@
             </button>
 
             {menuOpen && (
-              <div className="fixed inset-0 z-50 bg-wkbInk/70 backdrop-blur-md pointer-events-auto">
-                <div className="absolute inset-x-0 top-0 p-6 flex items-center justify-between">
+              <div
+                className="fixed inset-0 z-50 bg-wkbInk/70 backdrop-blur-md pointer-events-auto"
+                onClick={(e) => { if (e.target === e.currentTarget) setMenuOpen(false); }}
+              >
+                <div className="absolute inset-x-0 top-0 p-6 flex items-center justify-between pointer-events-auto">
                   <div className="font-serif text-2xl tracking-tighter font-bold text-wkbPaper">WhoKilledBambi</div>
                   <button
-                    className="px-4 py-2 rounded-full border border-wkbPaper/30 text-wkbPaper text-xs uppercase tracking-[0.3em]"
+                    className="px-4 py-2 rounded-full border border-wkbPaper/30 text-wkbPaper text-xs uppercase tracking-[0.3em] pointer-events-auto"
                     onClick={() => setMenuOpen(false)}
                   >
                     Luk
                   </button>
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center px-8">
+                <div className="absolute inset-0 flex items-center justify-center px-8 pointer-events-auto">
                   <ul className="w-full max-w-md space-y-6">
                     {allItems.map(item => (
                       <li key={item.id}>
