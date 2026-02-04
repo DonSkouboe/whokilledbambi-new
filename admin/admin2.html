@@ -1149,7 +1149,7 @@
             if (!cleanBase) return '';
             const fxn = fx == '' ? '' : clampNumber(fx, 0, 100);
             const fyn = fy == '' ? '' : clampNumber(fy, 0, 100);
-            const zn = z == '' ? '' : clampNumber(z, 80, 160);
+            const zn = z == '' ? '' : clampNumber(z, 100, 160);
             if (fxn == '' && fyn == '' && zn == '') return cleanBase;
             const finalFx = fxn == '' ? 50 : fxn;
             const finalFy = fyn == '' ? 50 : fyn;
@@ -1244,7 +1244,7 @@
                     </div>
                     <div class="form-section">
                         <label class="form-label">Billede zoom (%)</label>
-                        <input id="field-image-scale" class="form-input" type="number" min="80" max="160" value="${imageMeta.z}" placeholder="100">
+                        <input id="field-image-scale" class="form-input" type="number" min="100" max="160" value="${imageMeta.z}" placeholder="100">
                     </div>
                     <div class="form-section">
                         <label class="form-label">Brødtekst</label>
@@ -1312,7 +1312,7 @@
                     </div>
                     <div class="form-section">
                         <label class="form-label">Billede zoom (%)</label>
-                        <input id="field-image-scale" class="form-input" type="number" min="80" max="160" value="${imageMeta.z}" placeholder="100">
+                        <input id="field-image-scale" class="form-input" type="number" min="100" max="160" value="${imageMeta.z}" placeholder="100">
                     </div>
                     <div class="form-section">
                         <label class="form-label">Sortering</label>
@@ -1465,7 +1465,7 @@
                             </div>
                             <div style="height:10px;"></div>
                             <label class="form-label">Billede zoom (%)</label>
-                            <input class="form-input" data-field="image_scale" type="number" min="80" max="160" value="${block.image_scale ?? ''}" placeholder="100">
+                            <input class="form-input" data-field="image_scale" type="number" min="100" max="160" value="${block.image_scale ?? ''}" placeholder="100">
                             <div style="height:10px;"></div>
                             <label class="form-label">Caption</label>
                             <input class="form-input" data-field="caption" type="text" value="${block.caption || ''}">
@@ -1624,7 +1624,7 @@
                                     <button class="icon-btn" data-action="plus-focus-y" data-value="100">Bund</button>
                                 </div>
                                 <label class="form-label">Billede zoom (%)</label>
-                                <input class="form-input" data-field="image_scale" type="number" min="80" max="160" value="${section.image_scale ?? ''}" placeholder="100">
+                                <input class="form-input" data-field="image_scale" type="number" min="100" max="160" value="${section.image_scale ?? ''}" placeholder="100">
                                 <div style="height:10px;"></div>
                                 <label class="form-label">Video URL</label>
                                 <input class="form-input" data-field="video_url" type="text" value="${section.video_url || ''}">
