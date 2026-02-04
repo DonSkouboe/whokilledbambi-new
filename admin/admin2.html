@@ -9,8 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lato:wght@300;400;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
-      tailwind = { config: {
-        corePlugins: { preflight: false },
+      tailwind = { 
         theme: {
           extend: {
             fontFamily: {
@@ -22,43 +21,51 @@
               wkbPaper: '#F2EFE9',
               wkbInk: '#1A1C1B',
               wkbCoral: '#FF6B4A',
-              wkbSage: '#94A388',
-              uiDark: '#0F1115',
-              uiPanel: '#181A1F',
-              uiBorder: '#2A2D36'
+              wkbSage: '#94A388'
             }
           }
         }
-      }};
+      };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+        /* --- HARDCODED COLORS FOR STABILITY --- */
         :root {
-            --accent: var(--wkbCoral);
-            --text-main: #e2e8f0;
-            --text-muted: #94a3b8;
-            --border: var(--uiBorder);
-            --selection: #ffffff;
+            /* Brand */
+            --wkbPaper: #F2EFE9;
+            --wkbInk: #1A1C1B;
+            --wkbCoral: #FF6B4A;
+            --wkbSage: #94A388;
+
+            /* UI Theme */
+            --uiBg: #0F1115;       /* Mørk baggrund */
+            --uiPanel: #1A1D23;    /* Lidt lysere paneler */
+            --uiBorder: #2E323B;   /* Kantlinjer */
+            --uiHover: #252A33;    /* Hover effekt */
+
+            /* Text */
+            --textMain: #F1F5F9;   /* Hvidlig */
+            --textMuted: #94A3B8;  /* Grå */
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
 
         body {
             font-family: 'Space Grotesk', sans-serif;
-            background-color: var(--uiDark);
-            color: var(--text-main);
+            background-color: var(--uiBg); /* Sikrer mørk baggrund */
+            color: var(--textMain);
             height: 100vh;
             display: flex;
             overflow: hidden;
             font-size: 14px;
         }
 
-        /* Smooth Scrolling */
+        /* Scrollbar styling */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: var(--uiDark); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: var(--uiBg); }
+        ::-webkit-scrollbar-thumb { background: var(--uiBorder); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
         .hidden { display: none !important; }
@@ -75,7 +82,7 @@
         .sidebar-left {
             width: 280px;
             background-color: var(--uiPanel);
-            border-right: 1px solid var(--border);
+            border-right: 1px solid var(--uiBorder);
             display: flex;
             flex-direction: column;
             z-index: 10;
@@ -89,12 +96,12 @@
             font-size: 1.2rem;
             font-weight: 700;
             letter-spacing: -0.5px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--uiBorder);
             display: flex;
             align-items: center;
             gap: 12px;
         }
-        .brand i { color: var(--accent); }
+        .brand i { color: var(--wkbCoral); }
         .brand-text { color: white; letter-spacing: -0.5px; }
 
         .components-list {
@@ -106,8 +113,8 @@
         .brand-footer {
             margin-top: auto;
             padding: 20px;
-            border-top: 1px solid var(--border);
-            color: var(--text-muted);
+            border-top: 1px solid var(--uiBorder);
+            color: var(--textMuted);
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -115,12 +122,12 @@
             align-items: center;
             justify-content: space-between;
         }
-        .brand-footer span { color: var(--accent); font-weight: 600; }
+        .brand-footer span { color: var(--wkbCoral); font-weight: 600; }
 
         .category-title {
             font-size: 0.7rem;
             text-transform: uppercase;
-            color: var(--text-muted);
+            color: var(--textMuted);
             margin-bottom: 12px;
             letter-spacing: 1.5px;
             font-weight: 600;
@@ -138,19 +145,19 @@
             align-items: center;
             gap: 12px;
             transition: all 0.2s ease;
-            color: var(--text-muted);
+            color: var(--textMuted);
             font-weight: 500;
         }
 
         .nav-item:hover {
-            background-color: rgba(255,255,255,0.03);
+            background-color: var(--uiHover);
             color: white;
         }
 
         .nav-item.active {
-            background-color: rgba(255, 107, 74, 0.1); /* Coral tint */
-            border-color: rgba(255, 107, 74, 0.2);
-            color: var(--accent);
+            background-color: rgba(255, 107, 74, 0.1); 
+            border-color: rgba(255, 107, 74, 0.3);
+            color: var(--wkbCoral);
         }
         
         .nav-item i { width: 20px; text-align: center; }
@@ -158,9 +165,9 @@
         /* --- CENTER: Canvas --- */
         .canvas-area {
             flex: 1;
-            background-color: var(--uiDark);
-            /* Subtle grid pattern for professional feel */
-            background-image: radial-gradient(#2A2D36 1px, transparent 1px);
+            background-color: var(--uiBg);
+            /* Subtelt grid mønster */
+            background-image: radial-gradient(#2E323B 1px, transparent 1px);
             background-size: 24px 24px;
             overflow-y: auto;
             padding: 40px 48px;
@@ -172,9 +179,9 @@
 
         .page-container {
             width: min(1000px, 100%);
-            background-color: var(--wkbPaper);
+            background-color: var(--wkbPaper); /* HVIDT PAPIR - Det er intentionen */
             min-height: calc(100vh - 80px);
-            color: var(--wkbInk);
+            color: var(--wkbInk); /* SORT TEKST PÅ PAPIR */
             box-shadow: 0 20px 50px rgba(0,0,0,0.4);
             position: relative;
             padding: 40px;
@@ -237,7 +244,7 @@
         }
         .btn-outline:hover { background: #eee; }
 
-        /* --- List Items (Cards) --- */
+        /* --- LIST ITEMS --- */
         .list {
             display: grid;
             gap: 16px;
@@ -268,7 +275,6 @@
             background-color: #fffaf9;
         }
 
-        /* Thumbnail Styles */
         .item-thumb {
             width: 64px;
             height: 64px;
@@ -336,7 +342,7 @@
         .sidebar-right {
             width: 380px;
             background-color: var(--uiPanel);
-            border-left: 1px solid var(--border);
+            border-left: 1px solid var(--uiBorder);
             display: flex;
             flex-direction: column;
             z-index: 10;
@@ -344,7 +350,7 @@
 
         .inspector-header {
             padding: 20px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--uiBorder);
             font-weight: 700;
             color: white;
             display: flex;
@@ -357,14 +363,14 @@
 
         .icon-btn {
             background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
+            border: 1px solid var(--uiBorder);
+            color: var(--textMuted);
             border-radius: 4px;
             padding: 6px 10px;
             cursor: pointer;
             transition: 0.2s;
         }
-        .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .icon-btn:hover { border-color: var(--wkbCoral); color: var(--wkbCoral); }
 
         .inspector-content {
             padding: 24px;
@@ -375,13 +381,13 @@
         .form-section {
             margin-bottom: 24px;
             padding-bottom: 24px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--uiBorder);
         }
         .form-section:last-child { border-bottom: none; }
 
         .form-label {
             display: block;
-            color: var(--text-muted);
+            color: var(--textMuted);
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -389,11 +395,12 @@
             font-weight: 600;
         }
         
+        /* FIXED: Hardcoded backgrounds for inputs to ensure readability */
         .form-input, .form-select, .form-textarea {
             width: 100%;
-            background: var(--uiDark);
-            border: 1px solid var(--border);
-            color: white;
+            background-color: var(--uiBg); 
+            border: 1px solid var(--uiBorder);
+            color: white; 
             padding: 10px 12px;
             border-radius: 4px;
             font-family: 'Space Grotesk', monospace;
@@ -403,8 +410,9 @@
         .form-textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
         
         .form-input:focus, .form-textarea:focus, .form-select:focus {
-            border-color: var(--accent);
+            border-color: var(--wkbCoral);
             box-shadow: 0 0 0 2px rgba(255, 107, 74, 0.1);
+            outline: none;
         }
 
         .btn-action {
@@ -424,7 +432,7 @@
         }
         .btn-action:hover { background: #eee; }
         
-        .btn-save { background: var(--accent); color: white; margin-top: 24px; }
+        .btn-save { background: var(--wkbCoral); color: white; margin-top: 24px; }
         .btn-save:hover { background: #e05536; }
 
         .btn-delete {
@@ -435,7 +443,7 @@
         }
         .btn-delete:hover { background: rgba(239, 68, 68, 0.1); }
 
-        /* --- Overlay & Modals --- */
+        /* --- LOGIN & MODALS --- */
         .login-overlay {
             position: fixed;
             inset: 0;
@@ -452,10 +460,11 @@
             width: 100%;
             max-width: 400px;
             background: var(--uiPanel);
-            border: 1px solid var(--border);
+            border: 1px solid var(--uiBorder);
             padding: 32px;
             border-radius: 8px;
             text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
 
         .modal-overlay {
@@ -474,7 +483,7 @@
             width: 100%;
             max-width: 420px;
             background: var(--uiPanel);
-            border: 1px solid var(--border);
+            border: 1px solid var(--uiBorder);
             padding: 24px;
             border-radius: 8px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -520,22 +529,21 @@
             cursor: pointer;
             font-size: 1.2rem;
         }
-        .preview-close:hover { color: var(--accent); }
+        .preview-close:hover { color: var(--wkbCoral); }
 
         .preview-body { flex: 1; background: #fff; }
-
         .preview-iframe { width: 100%; height: 100%; border: 0; }
 
         /* Responsive */
         @media (max-width: 1024px) {
             body { flex-direction: column; overflow: auto; height: auto; }
             #app { flex-direction: column; width: 100%; height: auto; overflow: visible; }
-            .sidebar-left { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+            .sidebar-left { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--uiBorder); }
             .components-list { display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px; gap: 8px; overflow: visible; }
             .nav-item { margin-bottom: 0; justify-content: center; padding: 8px; }
-            .nav-item span { display: none; } /* Hide text on mobile nav */
+            .nav-item span { display: none; }
             .category-title { display: none; }
-            .sidebar-right { width: 100%; border-left: none; border-top: 1px solid var(--border); height: auto; }
+            .sidebar-right { width: 100%; border-left: none; border-top: 1px solid var(--uiBorder); height: auto; }
             .inspector-content { max-height: 400px; }
         }
     </style>
@@ -545,7 +553,7 @@
     <div id="login-overlay" class="login-overlay">
         <div class="login-card">
             <div style="margin-bottom:24px; color:white; font-family:'Cormorant Garamond'; font-size:2rem; font-weight:600; font-style:italic;">WKB CMS</div>
-            <p style="color:var(--text-muted); margin-bottom:24px;">Log ind for at administrere indhold.</p>
+            <p style="color:var(--textMuted); margin-bottom:24px;">Log ind for at administrere indhold.</p>
             <div class="form-group" style="text-align:left;">
                 <label class="form-label">Brugernavn</label>
                 <input id="login-username" class="form-input" type="text" placeholder="admin">
@@ -555,7 +563,7 @@
                 <input id="login-password" class="form-input" type="password" placeholder="••••••••">
             </div>
             <button id="login-btn" class="btn-action btn-save" style="margin-top:24px;">Log ind</button>
-            <p id="login-status" class="status" style="margin-top: 12px; font-size:0.8rem;"></p>
+            <p id="login-status" class="status" style="margin-top: 12px; font-size:0.8rem; color: #ef4444;"></p>
         </div>
     </div>
 
@@ -620,7 +628,7 @@
                 </div>
             </div>
             <div class="inspector-content" id="inspector-body" style="display:none;"></div>
-            <div id="empty-state" style="padding:40px; text-align:center; color:var(--text-muted);">
+            <div id="empty-state" style="padding:40px; text-align:center; color:var(--textMuted);">
                 <i class="fa-solid fa-arrow-pointer" style="font-size:2rem; margin-bottom:15px; opacity:0.5;"></i>
                 <p>Vælg et element til venstre for at redigere.</p>
             </div>
@@ -630,8 +638,8 @@
     <!-- ADMIN MODAL -->
     <div id="admin-modal" class="modal-overlay">
         <div class="modal-card">
-            <h2 style="margin-bottom:16px; font-family:'Cormorant Garamond'; font-size:1.5rem;">Ny Bruger</h2>
-            <p style="color: var(--text-muted); margin-bottom: 16px;">Opret adgang til systemet.</p>
+            <h2 style="margin-bottom:16px; font-family:'Cormorant Garamond'; font-size:1.5rem; color:white;">Ny Bruger</h2>
+            <p style="color: var(--textMuted); margin-bottom: 16px;">Opret adgang til systemet.</p>
             <div class="form-group" style="margin-bottom:16px;">
                 <label class="form-label">Brugernavn</label>
                 <input id="modal-username" class="form-input" type="text" placeholder="nyadmin">
@@ -641,7 +649,7 @@
                 <input id="modal-password" class="form-input" type="password" placeholder="••••••••">
             </div>
             <button id="modal-create" class="btn-action btn-save">Opret bruger</button>
-            <button id="modal-cancel" class="btn-action" style="background:transparent; border:1px solid var(--border); color:var(--text-muted);">Annuller</button>
+            <button id="modal-cancel" class="btn-action" style="background:transparent; border:1px solid var(--uiBorder); color:var(--textMuted);">Annuller</button>
             <p id="modal-status" class="status" style="margin-top: 12px;"></p>
         </div>
     </div>
@@ -729,7 +737,6 @@
             emptyState.style.display = 'block';
             inspectorTitle.textContent = 'Egenskaber';
             
-            // Update Header
             const meta = sectionMeta[section];
             sectionTitle.textContent = meta.title;
             sectionMetaText.textContent = meta.subtitle;
@@ -770,7 +777,6 @@
                 let metaContent = '';
                 let title = item.title || item.name || item.slug || 'Uden titel';
                 let subtitle = '';
-                let pillClass = '';
 
                 if (state.section === 'news') {
                     thumbHtml = getThumbnail(item);
@@ -846,7 +852,7 @@
             const item = state.selected || {};
             let html = '';
 
-            const commonFields = (type) => `
+            const commonFields = () => `
                 <div class="form-section">
                     <label class="form-label">Titel</label>
                     <input id="field-title" class="form-input" type="text" value="${item.title || ''}" placeholder="Indtast titel...">
@@ -863,7 +869,7 @@
                     <div class="form-section">
                         <label class="form-label">Billede</label>
                         <input id="field-image" class="form-input" type="text" value="${item.image_url || ''}" placeholder="https://...">
-                        <div style="margin-top:8px; font-size:0.8rem; color:var(--text-muted);">Eller upload ny:</div>
+                        <div style="margin-top:8px; font-size:0.8rem; color:var(--textMuted);">Eller upload ny:</div>
                         <input id="field-upload" class="form-input" type="file" accept="image/*" style="margin-top:4px;">
                     </div>
                     <div class="form-section">
@@ -951,7 +957,7 @@
                 <button class="btn-action" data-action="preview"><i class="fa-solid fa-eye"></i> Forhåndsvisning</button>
                 <button class="btn-action btn-save" data-action="save"><i class="fa-solid fa-floppy-disk"></i> Gem Ændringer</button>
                 ${!item._new ? `<button class="btn-action btn-delete" data-action="delete"><i class="fa-solid fa-trash"></i> Slet</button>` : ''}
-                <button class="btn-action" data-action="cancel" style="background:transparent; border:1px solid var(--border); color:var(--text-muted); margin-top:8px;">Annuller</button>
+                <button class="btn-action" data-action="cancel" style="background:transparent; border:1px solid var(--uiBorder); color:var(--textMuted); margin-top:8px;">Annuller</button>
             `;
 
             inspectorBody.innerHTML = html;
@@ -1011,8 +1017,8 @@
             inspectorBody.style.display = 'none';
             emptyState.style.display = 'block';
             inspectorTitle.textContent = 'Egenskaber';
-            renderList(); // Re-render to remove active state styling
-            if(state.items.length > 0) clearDraft(state.section, state.items[0].id); // clear draft for visual reset if needed
+            renderList();
+            if(state.items.length > 0) clearDraft(state.section, state.items[0].id);
         };
 
         const previewModal = document.getElementById('preview-modal');
@@ -1162,7 +1168,6 @@
         document.getElementById('refresh-btn').addEventListener('click', () => setSection(state.section));
         document.querySelectorAll('.nav-item').forEach(i => i.addEventListener('click', () => setSection(i.dataset.section)));
         
-        // Auth Handlers
         const showLogin = (show) => {
             if (show) { loginOverlay.classList.remove('hidden'); appRoot.classList.add('hidden'); }
             else { loginOverlay.classList.add('hidden'); appRoot.classList.remove('hidden'); }
@@ -1182,7 +1187,6 @@
             showLogin(true);
         });
 
-        // Admin User Logic (simplified)
         const adminModal = document.getElementById('admin-modal');
         document.getElementById('new-admin-btn').addEventListener('click', () => adminModal.style.display = 'flex');
         document.getElementById('modal-cancel').addEventListener('click', () => adminModal.style.display = 'none');
@@ -1195,7 +1199,6 @@
             else { alert('Bruger oprettet'); adminModal.style.display = 'none'; }
         });
 
-        // Session Check
         supabaseClient.auth.getSession().then(({ data }) => {
             if (data.session) showLogin(false);
         });
