@@ -133,6 +133,15 @@
 
     <script type="text/babel">
       const { useState, useEffect, useRef } = React;
+      const previewMode = new URLSearchParams(window.location.search).get('preview');
+      const previewPayload = (() => {
+        try {
+          return JSON.parse(localStorage.getItem('wkbPreview') || 'null');
+        } catch (err) {
+          return null;
+        }
+      })();
+
       
       // --- SUPABASE CLIENT CONFIG ---
       const SUPABASE_URL = 'https://rtblicylmsfhpeggqmlp.supabase.co';
@@ -438,6 +447,18 @@
         const [error, setError] = useState(null);
 
         useEffect(() => {
+          if (previewMode === 'news' && previewPayload?.type === 'news') {
+            const item = previewPayload.data || {};
+            setNews([{
+              title: item.title,
+              publishedAt: item.publishedAt,
+              body: item.body,
+              imageUrl: item.imageUrl
+            }]);
+            setLoading(false);
+            return;
+          }
+
           supabaseClient
             .from('news')
             .select('title,published_at,body,image_url')
@@ -711,6 +732,20 @@
         const [loading, setLoading] = useState(true);
 
         useEffect(() => {
+          if (previewMode === 'calendar' && previewPayload?.type === 'events') {
+            const item = previewPayload.data || {};
+            setEvents([{
+              title: item.title,
+              subtitle: item.subtitle,
+              date: item.date,
+              location: item.location,
+              ticketLink: item.ticketLink,
+              theme: item.theme
+            }]);
+            setLoading(false);
+            return;
+          }
+
           supabaseClient
             .from('events')
             .select('title,subtitle,event_date,location,ticket_link,theme')
@@ -794,10 +829,21 @@
       };
 
       const App = () => {
-        const [view, setView] = useState('intro');
+        const [view, setView] = useState(previewMode ? previewMode : 'intro');
         const [contentPages, setContentPages] = useState({});
         const [members, setMembers] = useState(DEFAULT_MEMBERS_DATA);
         const [collaborators, setCollaborators] = useState(DEFAULT_COLLABORATORS);
+
+        useEffect(() => {
+          if (previewMode === 'about' && previewPayload?.type === 'members') {
+            const item = previewPayload.data || {};
+            setMembers([{
+              name: item.name || 'Uden navn',
+              instrument: item.instrument || '',
+              imageUrl: item.imageUrl || ''
+            }]);
+          }
+        }, []);
 
         useEffect(() => {
           let alive = true;
@@ -817,12 +863,14 @@
               });
               setContentPages(pageMap);
 
-              if (membersRes.data && membersRes.data.length) {
-                setMembers(membersRes.data.map((m) => ({
-                  name: m.name,
-                  instrument: m.instrument,
-                  imageUrl: m.image_url
-                })));
+              if (!(previewMode === 'about' && previewPayload?.type === 'members')) {
+                if (membersRes.data && membersRes.data.length) {
+                  setMembers(membersRes.data.map((m) => ({
+                    name: m.name,
+                    instrument: m.instrument,
+                    imageUrl: m.image_url
+                  })));
+                }
               }
 
               if (collaboratorsRes.data && collaboratorsRes.data.length) {
@@ -849,8 +897,8 @@
             <AudioPlayer />
             
             <div className="relative z-10">
-              {view === 'intro' && <IntroSequence onComplete={() => setView('home')} />}
-              {view !== 'intro' && (
+              {!previewMode && view === 'intro' && <IntroSequence onComplete={() => setView('home')} />}
+              {(previewMode || view !== 'intro') && (
                 <>
                   <Navigation currentView={view} setView={setView} />
                   {view === 'home' && <HomeSection setView={setView} homeContent={homeContent} collaborators={collaborators} />}
