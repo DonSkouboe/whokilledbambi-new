@@ -1285,8 +1285,10 @@
               });
               setContentPages(pageMap);
 
-              const pageList = (pagesRes.data || []).filter((p) => p.data && p.data.page_type === 'page');
-              setPages(pageList);
+              if (!(previewMode === 'page' && previewPayload?.type === 'page')) {
+                const pageList = (pagesRes.data || []).filter((p) => p.data && p.data.page_type === 'page');
+                setPages(pageList);
+              }
 
               if (!(previewMode === 'about' && previewPayload?.type === 'members')) {
                 if (membersRes.data && membersRes.data.length) {
